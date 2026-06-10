@@ -1,0 +1,5 @@
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Debug\net8.0\TaskOverlay.Infrastructure.csproj.AssemblyReference.cache
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Debug\net8.0\TaskOverlay.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Debug\net8.0\TaskOverlay.Infrastructure.AssemblyInfoInputs.cache
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Debug\net8.0\TaskOverlay.Infrastructure.AssemblyInfo.cs
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Debug\net8.0\TaskOverlay.Infrastructure.csproj.CoreCompileInputs.cache

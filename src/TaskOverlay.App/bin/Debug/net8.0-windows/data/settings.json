@@ -1,0 +1,16 @@
+{
+  "hotkey": "Ctrl\u002B\u0060",
+  "isTopmost": true,
+  "overlayOpacity": 0.78,
+  "overlayLeft": 663.2,
+  "overlayTop": 28.8,
+  "overlayWidth": 388.8,
+  "overlayHeight": 180,
+  "startWithWindows": false,
+  "storageBackend": 0,
+  "mySqlHost": "localhost",
+  "mySqlPort": 3306,
+  "mySqlDatabase": "task_overlay",
+  "mySqlUser": "root",
+  "mySqlPassword": ""
+}

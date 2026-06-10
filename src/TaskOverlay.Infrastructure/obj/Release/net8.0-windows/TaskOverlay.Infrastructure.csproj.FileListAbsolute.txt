@@ -1,0 +1,15 @@
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\bin\Release\net8.0-windows\TaskOverlay.Infrastructure.deps.json
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\bin\Release\net8.0-windows\TaskOverlay.Infrastructure.dll
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\bin\Release\net8.0-windows\TaskOverlay.Infrastructure.pdb
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\bin\Release\net8.0-windows\TaskOverlay.Core.dll
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\bin\Release\net8.0-windows\TaskOverlay.Core.pdb
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Release\net8.0-windows\TaskOverlay.Infrastructure.csproj.AssemblyReference.cache
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Release\net8.0-windows\TaskOverlay.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Release\net8.0-windows\TaskOverlay.Infrastructure.AssemblyInfoInputs.cache
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Release\net8.0-windows\TaskOverlay.Infrastructure.AssemblyInfo.cs
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Release\net8.0-windows\TaskOverlay.Infrastructure.csproj.CoreCompileInputs.cache
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Release\net8.0-windows\TaskOver.D84FD2C6.Up2Date
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Release\net8.0-windows\TaskOverlay.Infrastructure.dll
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Release\net8.0-windows\refint\TaskOverlay.Infrastructure.dll
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Release\net8.0-windows\TaskOverlay.Infrastructure.pdb
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Release\net8.0-windows\ref\TaskOverlay.Infrastructure.dll

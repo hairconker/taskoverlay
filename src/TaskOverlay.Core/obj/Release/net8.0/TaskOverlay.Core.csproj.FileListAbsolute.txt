@@ -1,0 +1,11 @@
+E:\work\to-dolist\src\TaskOverlay.Core\bin\Release\net8.0\TaskOverlay.Core.deps.json
+E:\work\to-dolist\src\TaskOverlay.Core\bin\Release\net8.0\TaskOverlay.Core.dll
+E:\work\to-dolist\src\TaskOverlay.Core\bin\Release\net8.0\TaskOverlay.Core.pdb
+E:\work\to-dolist\src\TaskOverlay.Core\obj\Release\net8.0\TaskOverlay.Core.GeneratedMSBuildEditorConfig.editorconfig
+E:\work\to-dolist\src\TaskOverlay.Core\obj\Release\net8.0\TaskOverlay.Core.AssemblyInfoInputs.cache
+E:\work\to-dolist\src\TaskOverlay.Core\obj\Release\net8.0\TaskOverlay.Core.AssemblyInfo.cs
+E:\work\to-dolist\src\TaskOverlay.Core\obj\Release\net8.0\TaskOverlay.Core.csproj.CoreCompileInputs.cache
+E:\work\to-dolist\src\TaskOverlay.Core\obj\Release\net8.0\TaskOverlay.Core.dll
+E:\work\to-dolist\src\TaskOverlay.Core\obj\Release\net8.0\refint\TaskOverlay.Core.dll
+E:\work\to-dolist\src\TaskOverlay.Core\obj\Release\net8.0\TaskOverlay.Core.pdb
+E:\work\to-dolist\src\TaskOverlay.Core\obj\Release\net8.0\ref\TaskOverlay.Core.dll
