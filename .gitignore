@@ -1,0 +1,47 @@
+# Build outputs
+bin/
+obj/
+**/bin/
+**/obj/
+
+# Local runtime data and backups
+data/
+**/data/
+*.bak.json
+*.tmp.json
+
+# Logs and diagnostics
+*.log
+*.trace
+*.dmp
+TestResults/
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+
+# IDE and OS files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+Thumbs.db
+Desktop.ini
+
+# Local artifacts and temporary files
+artifacts/
+CONTEXT_CHECKPOINT.md
+DRIVE_ORGANIZATION_ANALYSIS.md
+*.zip
+*.7z
+*.tar
+*.tar.gz
+
+# Secrets and environment overrides
+.env
+.env.*
+secrets.json
+appsettings.Local.json
