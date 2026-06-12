@@ -14,6 +14,7 @@ public sealed class AppBootstrapper : IDisposable
     private readonly LocalSettingsStore _settingsStore = new();
     private readonly NotifyIcon _notifyIcon;
     private readonly ExternalTaskProposalStore _proposals;
+    private readonly GoalApplicationService _goals;
     private readonly LocalTaskApiService _api;
     private ITaskRepository _repository;
     private TaskApplicationService _tasks;
@@ -30,7 +31,8 @@ public sealed class AppBootstrapper : IDisposable
         _repository = new JsonTaskRepository(() => _settingsStore.Current);
         _tasks = new TaskApplicationService(_repository);
         _proposals = new ExternalTaskProposalStore(Path.GetDirectoryName(_settingsStore.SettingsFilePath)!);
-        _api = new LocalTaskApiService(() => _tasks, _proposals, () => _settingsStore.Current);
+        _goals = new GoalApplicationService(new JsonGoalRepository(Path.GetDirectoryName(_settingsStore.SettingsFilePath)!));
+        _api = new LocalTaskApiService(() => _tasks, _proposals, () => _goals, () => _settingsStore.Current);
         _notifyIcon = BuildNotifyIcon();
     }
 
@@ -57,6 +59,7 @@ public sealed class AppBootstrapper : IDisposable
                 _repository,
                 _settingsStore,
                 _proposals,
+                _goals,
                 ApplySettingsAsync,
                 opacity => _overlayWindow?.SetOpacity(opacity),
                 ExitApplication);
@@ -203,7 +206,20 @@ public sealed class AppBootstrapper : IDisposable
     private async Task RunStartupTaskAsync()
     {
         await InitializeStorageAsync();
+        await InitializeGoalsAsync();
         RestartApi();
+    }
+
+    private async Task InitializeGoalsAsync()
+    {
+        try
+        {
+            await _goals.InitializeAsync();
+        }
+        catch (Exception ex)
+        {
+            _notifyIcon.ShowBalloonTip(6000, "目标库初始化失败", ex.Message, ToolTipIcon.Warning);
+        }
     }
 
     private void RestartApi()

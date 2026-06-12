@@ -2,7 +2,7 @@ using TaskOverlay.Core.Models;
 
 namespace TaskOverlay.Core.Services;
 
-public sealed class LocalPlanningService(TaskApplicationService tasks)
+public sealed class LocalPlanningService(TaskApplicationService tasks, GoalApplicationService? goals = null)
 {
     public async Task<PlanningReview> BuildTomorrowPlanAsync(
         PlanningRequest request,
@@ -18,6 +18,9 @@ public sealed class LocalPlanningService(TaskApplicationService tasks)
         var tomorrow = await tasks.GetTasksAsync(TaskFilter.Tomorrow, cancellationToken: cancellationToken);
         var overdue = await tasks.GetTasksAsync(TaskFilter.Overdue, cancellationToken: cancellationToken);
         var all = await tasks.GetTasksAsync(TaskFilter.All, cancellationToken: cancellationToken);
+        var activeGoals = goals is null
+            ? []
+            : (await goals.GetGoalsAsync(GoalStatus.Active, cancellationToken)).ToList();
 
         var selected = SelectCandidateTasks(today, tomorrow, overdue, request.MaxItems);
         var review = new PlanningReview
@@ -35,6 +38,11 @@ public sealed class LocalPlanningService(TaskApplicationService tasks)
         foreach (var item in BuildCarryOverProposalItems(today, tomorrow, targetDefaultDue, request.MaxItems - review.Items.Count))
         {
             review.Items.Add(item);
+        }
+
+        foreach (var goalItem in BuildGoalProposalItems(activeGoals, targetDefaultDue, request.MaxItems - review.Items.Count))
+        {
+            review.Items.Add(goalItem);
         }
 
         if (!string.IsNullOrWhiteSpace(request.GoalSummary) && review.Items.Count < request.MaxItems)
@@ -59,6 +67,11 @@ public sealed class LocalPlanningService(TaskApplicationService tasks)
         if (overdue.Count > 0)
         {
             review.Warnings.Add($"有 {overdue.Count} 个过期任务，建议优先处理或重新安排。");
+        }
+
+        if (activeGoals.Count > 0)
+        {
+            review.Warnings.Add($"已读取 {activeGoals.Count} 个进行中的长期目标。");
         }
 
         if (review.Items.Count == 0 && all.Count == 0)
@@ -140,6 +153,56 @@ public sealed class LocalPlanningService(TaskApplicationService tasks)
                 DueAt = targetDefaultDue,
                 Reason = "今天仍未完成，建议明天继续安排；需确认后才修改原任务。",
                 Tags = task.Tags.Select(tag => new Tag { Name = tag.Name, Color = tag.Color }).ToList()
+            };
+        }
+    }
+
+    private static IEnumerable<PlanningItem> BuildGoalProposalItems(
+        IReadOnlyList<Goal> goals,
+        DateTime targetDefaultDue,
+        int remainingSlots)
+    {
+        if (remainingSlots <= 0)
+        {
+            yield break;
+        }
+
+        foreach (var goal in goals
+                     .OrderByDescending(goal => goal.Priority)
+                     .ThenBy(goal => goal.TimeHorizon)
+                     .ThenBy(goal => goal.CreatedAt)
+                     .Take(remainingSlots))
+        {
+            var milestone = goal.Milestones
+                .Where(item => item.Status != MilestoneStatus.Completed)
+                .OrderBy(item => item.TargetDate ?? DateOnly.MaxValue)
+                .FirstOrDefault();
+            var title = milestone is null
+                ? $"推进目标：{goal.Title}"
+                : $"推进目标：{goal.Title} / {milestone.Title}";
+            var notes = new List<string>();
+            if (!string.IsNullOrWhiteSpace(goal.Description))
+            {
+                notes.Add(goal.Description);
+            }
+            if (goal.DailyBudgetMinutes is not null)
+            {
+                notes.Add($"建议投入：{goal.DailyBudgetMinutes} 分钟");
+            }
+            if (milestone?.TargetDate is not null)
+            {
+                notes.Add($"阶段目标日期：{milestone.TargetDate:yyyy-MM-dd}");
+            }
+
+            yield return new PlanningItem
+            {
+                Kind = PlanningItemKind.ProposedTask,
+                Title = title,
+                Notes = notes.Count == 0 ? null : string.Join(Environment.NewLine, notes),
+                Priority = goal.Priority,
+                DueAt = targetDefaultDue,
+                Reason = "来自进行中的长期目标库。",
+                Tags = goal.Tags.Select(tag => new Tag { Name = tag.Name, Color = tag.Color }).ToList()
             };
         }
     }

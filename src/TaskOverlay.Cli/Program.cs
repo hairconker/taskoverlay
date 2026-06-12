@@ -58,6 +58,7 @@ static async Task<CommandResult> ExecuteAsync(HttpClient client, Command command
         "health" => await SendAsync(client, HttpMethod.Get, "health"),
         "task" => await ExecuteTaskAsync(client, command.Action, command.Arguments, cli),
         "proposal" => await ExecuteProposalAsync(client, command.Action, command.Arguments, cli),
+        "goal" => await ExecuteGoalAsync(client, command.Action, command.Arguments, cli),
         "plan" => await ExecutePlanAsync(client, command.Action, command.Arguments, cli),
         _ => throw new ArgumentException($"未知命令：{command.Group} {command.Action}".Trim())
     };
@@ -115,6 +116,35 @@ static async Task<CommandResult> ExecuteProposalAsync(HttpClient client, string 
             return await ExecuteForIdsAsync(client, arguments, cli, "api/proposals/{0}/reject", HttpMethod.Delete, null, isTask: false);
         default:
             throw new ArgumentException($"未知 proposal 子命令：{action}");
+    }
+}
+
+static async Task<CommandResult> ExecuteGoalAsync(HttpClient client, string action, IReadOnlyList<string> arguments, CliArguments cli)
+{
+    switch (action)
+    {
+        case "list":
+            var status = cli.Get("status");
+            return await SendAsync(client, HttpMethod.Get, string.IsNullOrWhiteSpace(status)
+                ? "api/goals"
+                : $"api/goals?status={Uri.EscapeDataString(status)}");
+        case "show":
+            return await SendAsync(client, HttpMethod.Get, $"api/goals/{RequireSingleId(arguments)}");
+        case "add":
+            return await SendPayloadsAsync(client, HttpMethod.Post, "api/goals", ReadGoalPayloads(cli, arguments, requireTitle: true));
+        case "update":
+            var goalId = RequireSingleId(arguments);
+            var current = await SendAsync(client, HttpMethod.Get, $"api/goals/{goalId}");
+            EnsureSuccess(current);
+            var goal = JsonSerializer.Deserialize<Goal>(JsonSerializer.Serialize(current.Value, CliJson.Options), CliJson.Options)
+                       ?? throw new InvalidDataException("无法读取目标详情。");
+            ApplyGoalOptions(goal, cli, arguments.Skip(1).ToList(), requireTitle: false);
+            return await SendAsync(client, HttpMethod.Put, $"api/goals/{goalId}", goal);
+        case "delete":
+            RequireConfirmation(cli, "删除目标");
+            return await SendAsync(client, HttpMethod.Delete, $"api/goals/{RequireSingleId(arguments)}");
+        default:
+            throw new ArgumentException($"未知 goal 子命令：{action}");
     }
 }
 
@@ -238,6 +268,106 @@ static IReadOnlyList<ExternalTaskProposal> ReadProposalPayloads(CliArguments cli
             Source = cli.Get("source") ?? "cli"
         }
     ];
+}
+
+static IReadOnlyList<Goal> ReadGoalPayloads(CliArguments cli, IReadOnlyList<string> titleParts, bool requireTitle)
+{
+    var payloads = ReadJsonPayloads<Goal>(cli);
+    if (payloads.Count > 0)
+    {
+        return payloads;
+    }
+
+    var goal = new Goal();
+    ApplyGoalOptions(goal, cli, titleParts, requireTitle);
+    return [goal];
+}
+
+static void ApplyGoalOptions(Goal goal, CliArguments cli, IReadOnlyList<string> titleParts, bool requireTitle)
+{
+    if (titleParts.Count > 0)
+    {
+        goal.Title = string.Join(' ', titleParts);
+    }
+    else if (cli.Get("title") is { } title)
+    {
+        goal.Title = title;
+    }
+    else if (requireTitle && string.IsNullOrWhiteSpace(goal.Title))
+    {
+        throw new ArgumentException("需要目标标题，可直接写在命令后或使用 --title。");
+    }
+
+    if (cli.Get("description") is { } description) goal.Description = description;
+    if (cli.Get("desc") is { } desc) goal.Description = desc;
+    if (cli.Get("priority") is { } priority)
+    {
+        goal.Priority = Enum.TryParse<TaskPriority>(priority, true, out var parsed)
+            ? parsed
+            : throw new ArgumentException("--priority 必须是 low、normal、high 或 urgent。");
+    }
+    if (cli.Get("status") is { } status)
+    {
+        goal.Status = ParseGoalStatus(status);
+    }
+    if (cli.Get("horizon") is { } horizon)
+    {
+        goal.TimeHorizon = ParseGoalTimeHorizon(horizon);
+    }
+    var dailyMinutesText = cli.Get("daily-minutes") ?? cli.Get("daily-budget");
+    if (dailyMinutesText is not null)
+    {
+        goal.DailyBudgetMinutes = int.TryParse(dailyMinutesText, out var minutes) && minutes > 0
+            ? minutes
+            : throw new ArgumentException("--daily-minutes 必须是正整数。");
+    }
+
+    var tagValues = cli.GetAll("tag")
+        .Concat(cli.GetAll("tags").SelectMany(SplitValues))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
+    if (tagValues.Count > 0)
+    {
+        goal.Tags = tagValues.Select(name => new Tag { Name = name }).ToList();
+    }
+
+    if (cli.Get("milestone") is { } milestoneTitle)
+    {
+        goal.Milestones.Add(new GoalMilestone
+        {
+            Title = milestoneTitle,
+            TargetDate = cli.Get("target") is { } target ? ParseDateOnly(target) : null,
+            Status = MilestoneStatus.NotStarted
+        });
+    }
+}
+
+static GoalStatus ParseGoalStatus(string value)
+{
+    return value.Trim().ToLowerInvariant() switch
+    {
+        "active" or "进行中" or "启用" => GoalStatus.Active,
+        "paused" or "pause" or "暂停" => GoalStatus.Paused,
+        "completed" or "complete" or "done" or "完成" => GoalStatus.Completed,
+        _ => throw new ArgumentException("--status 必须是 active、paused 或 completed。")
+    };
+}
+
+static GoalTimeHorizon ParseGoalTimeHorizon(string value)
+{
+    return value.Trim().ToLowerInvariant() switch
+    {
+        "long-term" or "longterm" or "long" or "长期" => GoalTimeHorizon.LongTerm,
+        "this-month" or "month" or "本月" => GoalTimeHorizon.ThisMonth,
+        "this-week" or "week" or "本周" => GoalTimeHorizon.ThisWeek,
+        _ => throw new ArgumentException("--horizon 必须是 long-term、this-month 或 this-week。")
+    };
+}
+
+static DateOnly ParseDateOnly(string value)
+{
+    var dateTime = ParseFlexibleDateTime(value);
+    return DateOnly.FromDateTime(dateTime);
 }
 
 static PlanningRequest ReadPlanningRequest(CliArguments cli, IReadOnlyList<string> arguments)
@@ -477,6 +607,14 @@ static Command NormalizeCommand(IReadOnlyList<string> positionals)
         var action = positionals.Count > 1 ? positionals[1].ToLowerInvariant() : "tomorrow";
         return new Command("plan", action, positionals.Skip(2).ToList());
     }
+    if (first is "goal" or "g")
+    {
+        var action = positionals.Count > 1 ? positionals[1].ToLowerInvariant() : "list";
+        if (action is "ls") action = "list";
+        if (action is "get") action = "show";
+        if (action is "rm") action = "delete";
+        return new Command("goal", action, positionals.Skip(2).ToList());
+    }
     if (first is "task" or "t" or "proposal" or "p")
     {
         var group = first is "t" ? "task" : first is "p" ? "proposal" : first;
@@ -636,6 +774,12 @@ static void PrintHelp()
           proposal show <ID>
           proposal add <标题> [任务字段] [--source ai]
           proposal confirm|reject <ID...> [--all]   reject --all 需要 --yes
+
+          goal list [--status active|paused|completed]
+          goal show <ID>
+          goal add <标题> [--description 文本] [--priority high] [--horizon long-term|this-month|this-week] [--daily-minutes 90] [--milestone 标题 --target 日期]
+          goal update <ID> [目标字段]
+          goal delete <ID> --yes
 
           plan tomorrow [--mode task-list|time-block] [--window 09:00-11:30] [--goal 文本]
 

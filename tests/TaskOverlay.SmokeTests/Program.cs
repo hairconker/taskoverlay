@@ -69,6 +69,31 @@ if ((await tasks.GetTasksAsync(TaskFilter.All)).Count != 0)
 }
 
 var proposalStore = new ExternalTaskProposalStore(testDir);
+var goalRepository = new JsonGoalRepository(testDir);
+await goalRepository.InitializeAsync();
+var goals = new GoalApplicationService(goalRepository);
+var savedGoal = await goals.SaveGoalAsync(new Goal
+{
+    Title = "AI Agent 工程能力",
+    Description = "长期提升工程化能力",
+    Priority = TaskPriority.High,
+    TimeHorizon = GoalTimeHorizon.LongTerm,
+    DailyBudgetMinutes = 90,
+    Tags = [new Tag { Name = "AI" }],
+    Milestones =
+    [
+        new GoalMilestone
+        {
+            Title = "完成 TaskOverlay 明日规划 V2",
+            TargetDate = DateOnly.FromDateTime(DateTime.Today.AddDays(7))
+        }
+    ]
+});
+if (savedGoal.Id == 0 || savedGoal.Milestones.Count != 1 || savedGoal.Milestones[0].GoalId != savedGoal.Id)
+{
+    throw new InvalidOperationException("Goal library did not persist nested milestones.");
+}
+
 var proposed = await proposalStore.AddAsync(new ExternalTaskProposal
 {
     Title = "AI 提案确认测试",
@@ -470,7 +495,7 @@ if ((await tasks.GetTasksAsync(TaskFilter.All)).Count != exportedCount)
     throw new InvalidOperationException("Rejected import changed current JSON data.");
 }
 
-var planning = new LocalPlanningService(tasks);
+var planning = new LocalPlanningService(tasks, goals);
 var taskListPlan = await planning.BuildTomorrowPlanAsync(new PlanningRequest
 {
     Mode = PlanningMode.TaskList,
@@ -480,9 +505,9 @@ var taskListPlan = await planning.BuildTomorrowPlanAsync(new PlanningRequest
 if (taskListPlan.Mode != PlanningMode.TaskList ||
     taskListPlan.TargetDate != DateOnly.FromDateTime(DateTime.Today.AddDays(1)) ||
     taskListPlan.Items.Count == 0 ||
-    taskListPlan.Items.All(item => item.Title != "推进长期目标"))
+    taskListPlan.Items.All(item => !item.Title.Contains("AI Agent 工程能力", StringComparison.Ordinal)))
 {
-    throw new InvalidOperationException("Task-list planning did not generate the expected tomorrow review.");
+    throw new InvalidOperationException("Task-list planning did not use active goals.");
 }
 
 var timeBlockPlan = await planning.BuildTomorrowPlanAsync(new PlanningRequest

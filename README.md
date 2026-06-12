@@ -106,6 +106,10 @@ TaskOverlay.Cli.exe proposal list --output ids
 TaskOverlay.Cli.exe proposal add --file proposals.json
 Get-Content tasks.json -Raw | TaskOverlay.Cli.exe task add --stdin
 
+# 长期目标库
+TaskOverlay.Cli.exe goal add "提升 AI Agent 工程能力" --priority high --horizon long-term --daily-minutes 90 --tags "AI,学习" --milestone "完成 TaskOverlay 规划助手" --target "2026-06-20"
+TaskOverlay.Cli.exe goal list --status active
+
 # 本地明日规划，不调用 AI
 TaskOverlay.Cli.exe plan tomorrow --mode task-list --goal "推进 TaskOverlay"
 TaskOverlay.Cli.exe plan tomorrow --mode time-block --window "09:00-11:30,14:00-17:30"
@@ -127,6 +131,11 @@ Windows PowerShell 5 会处理原生命令参数中的双引号，因此复杂 J
 - `POST /api/proposals`
 - `POST /api/proposals/{id}/confirm`
 - `DELETE /api/proposals/{id}/reject`
+- `GET /api/goals?status=active`
+- `GET /api/goals/{id}`
+- `POST /api/goals`
+- `PUT /api/goals/{id}`
+- `DELETE /api/goals/{id}`
 - `POST /api/tasks/{id}/complete`
 - `DELETE /api/tasks/{id}/delete`
 - `GET /api/plans/tomorrow?mode=taskList&windows=09:00-11:30`
@@ -136,12 +145,22 @@ Windows PowerShell 5 会处理原生命令参数中的双引号，因此复杂 J
 
 ## 明日规划 V1
 
-明日规划使用本地算法，运行时不依赖 AI。它会读取今天、明天、过期和未来任务，生成待确认的规划建议。
+明日规划使用本地算法，运行时不依赖 AI。它会读取进行中的长期目标、今天、明天、过期和未来任务，生成待确认的规划建议。
 
 - `任务列表模式`：输出按优先级排序的明日任务建议。
 - `时间块模式`：按可用时间段安排任务，并在需要时保留父子层级拆分。
 - 新增建议可提交到“外部提案”；确认后才会变成正式任务。
 - 已有任务调整只作为建议展示，不会自动修改正式任务。
+
+## 长期目标库 V2
+
+目标库保存到程序数据目录中的 `goals.json`，和任务数据分开，避免影响 `tasks.json` 的导入导出。
+
+- `Goal`：长期目标，包含标题、描述、优先级、状态、时间范围、每日建议投入时间和标签。
+- `Milestone`：阶段目标，包含目标日期和状态。
+- `Task Link`：预留的任务关联结构，后续用于把正式任务或提案关联到目标。
+
+本地规划算法会读取 `active` 目标，把高优先级目标和最近阶段目标转换成明日建议。
 
 Release 可执行文件：
 

@@ -203,9 +203,24 @@ try {
     $table = Invoke-Cli @("task", "list", "--output", "table")
     Assert-True ($table.Text -match "JSON official task") "table output should contain readable task titles"
 
-    $taskListPlan = Invoke-CliJson @("plan", "tomorrow", "--mode", "task-list", "--goal", "推进 TaskOverlay", "--max", "6")
+    $goal = Invoke-CliJson @(
+        "goal", "add", "提升 AI Agent 工程能力",
+        "--description", "长期目标库 e2e",
+        "--priority", "high",
+        "--horizon", "long-term",
+        "--daily-minutes", "90",
+        "--tags", "AI,规划",
+        "--milestone", "完成 TaskOverlay 规划 V2",
+        "--target", "tomorrow"
+    )
+    Assert-True ($goal.id -gt 0 -and $goal.milestones.Count -eq 1) "goal add should create a goal with milestone"
+    $goals = @(Invoke-CliJson @("goal", "list", "--status", "active"))
+    Assert-True (@($goals | Where-Object id -eq $goal.id).Count -eq 1) "goal list should include active goal"
+
+    $taskListPlan = Invoke-CliJson @("plan", "tomorrow", "--mode", "task-list", "--goal", "推进 TaskOverlay", "--max", "20")
     Assert-True ($taskListPlan.mode -eq "taskList") "plan tomorrow should support task-list mode"
     Assert-True ($taskListPlan.items.Count -gt 0) "task-list plan should include planning items"
+    Assert-True (@($taskListPlan.items | Where-Object { $_.title -match "AI Agent" }).Count -gt 0) "task-list plan should include active goal suggestions"
 
     $timeBlockPlan = Invoke-CliJson @("plan", "tomorrow", "--mode", "time-block", "--window", "08:00-09:00")
     Assert-True ($timeBlockPlan.mode -eq "timeBlock") "plan tomorrow should support time-block mode"

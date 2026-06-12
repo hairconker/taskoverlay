@@ -17,6 +17,7 @@ public partial class ManagementWindow : Window
     private ITaskRepository _repository;
     private readonly LocalSettingsStore _settingsStore;
     private readonly ExternalTaskProposalStore _proposals;
+    private readonly GoalApplicationService _goals;
     private readonly Func<Task<string?>> _applySettings;
     private readonly Action<double> _previewOverlayOpacity;
     private readonly Action _exitApplication;
@@ -26,6 +27,7 @@ public partial class ManagementWindow : Window
         ITaskRepository repository,
         LocalSettingsStore settingsStore,
         ExternalTaskProposalStore proposals,
+        GoalApplicationService goals,
         Func<Task<string?>> applySettings,
         Action<double> previewOverlayOpacity,
         Action exitApplication)
@@ -35,6 +37,7 @@ public partial class ManagementWindow : Window
         _repository = repository;
         _settingsStore = settingsStore;
         _proposals = proposals;
+        _goals = goals;
         _applySettings = applySettings;
         _previewOverlayOpacity = previewOverlayOpacity;
         _exitApplication = exitApplication;
@@ -161,7 +164,7 @@ public partial class ManagementWindow : Window
 
         try
         {
-            var planning = new LocalPlanningService(_tasks);
+            var planning = new LocalPlanningService(_tasks, _goals);
             _lastPlanningReview = await planning.BuildTomorrowPlanAsync(request);
             PlanningItems.Clear();
             PlanningWarnings.Clear();

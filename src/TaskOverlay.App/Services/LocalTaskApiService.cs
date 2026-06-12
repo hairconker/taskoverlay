@@ -11,6 +11,7 @@ namespace TaskOverlay.App.Services;
 public sealed class LocalTaskApiService(
     Func<TaskApplicationService> tasksProvider,
     ExternalTaskProposalStore proposals,
+    Func<GoalApplicationService> goalsProvider,
     Func<AppSettings> settingsProvider) : IDisposable
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
@@ -117,8 +118,24 @@ public sealed class LocalTaskApiService(
                 request.TargetDate = request.TargetDate == default
                     ? DateOnly.FromDateTime(DateTime.Today.AddDays(1))
                     : request.TargetDate;
-                var planning = new LocalPlanningService(tasksProvider());
+                var planning = new LocalPlanningService(tasksProvider(), goalsProvider());
                 await WriteJsonAsync(context.Response, HttpStatusCode.OK, await planning.BuildTomorrowPlanAsync(request, cancellationToken), cancellationToken);
+                return;
+            }
+
+            if (context.Request.HttpMethod == "GET" && path == "/api/goals")
+            {
+                var statusText = context.Request.QueryString["status"];
+                var status = Enum.TryParse<GoalStatus>(statusText, true, out var parsedStatus) ? parsedStatus : (GoalStatus?)null;
+                await WriteJsonAsync(context.Response, HttpStatusCode.OK, await goalsProvider().GetGoalsAsync(status, cancellationToken), cancellationToken);
+                return;
+            }
+
+            if (context.Request.HttpMethod == "POST" && path == "/api/goals")
+            {
+                var goal = await ReadJsonAsync<Goal>(context.Request, cancellationToken);
+                goal.Id = 0;
+                await WriteJsonAsync(context.Response, HttpStatusCode.Created, await goalsProvider().SaveGoalAsync(goal, cancellationToken), cancellationToken);
                 return;
             }
 
@@ -207,6 +224,40 @@ public sealed class LocalTaskApiService(
                 object result = proposal is null ? new { error = "提案不存在。" } : proposal;
                 await WriteJsonAsync(context.Response, proposal is null ? HttpStatusCode.NotFound : HttpStatusCode.OK, result, cancellationToken);
                 return;
+            }
+
+            if (segments.Length == 3 && segments[0] == "api" && segments[1] == "goals" && long.TryParse(segments[2], out var goalId))
+            {
+                if (context.Request.HttpMethod == "GET")
+                {
+                    var goal = await goalsProvider().GetGoalAsync(goalId, cancellationToken);
+                    object result = goal is null ? new { error = "目标不存在。" } : goal;
+                    await WriteJsonAsync(context.Response, goal is null ? HttpStatusCode.NotFound : HttpStatusCode.OK, result, cancellationToken);
+                    return;
+                }
+
+                if (context.Request.HttpMethod is "PUT" or "PATCH")
+                {
+                    var existing = await goalsProvider().GetGoalAsync(goalId, cancellationToken);
+                    if (existing is null)
+                    {
+                        await WriteJsonAsync(context.Response, HttpStatusCode.NotFound, new { error = "目标不存在。" }, cancellationToken);
+                        return;
+                    }
+
+                    var updated = await ReadJsonAsync<Goal>(context.Request, cancellationToken);
+                    updated.Id = existing.Id;
+                    updated.CreatedAt = existing.CreatedAt;
+                    await WriteJsonAsync(context.Response, HttpStatusCode.OK, await goalsProvider().SaveGoalAsync(updated, cancellationToken), cancellationToken);
+                    return;
+                }
+
+                if (context.Request.HttpMethod == "DELETE")
+                {
+                    var deleted = await goalsProvider().DeleteGoalAsync(goalId, cancellationToken);
+                    await WriteJsonAsync(context.Response, deleted ? HttpStatusCode.OK : HttpStatusCode.NotFound, new { goalId, deleted }, cancellationToken);
+                    return;
+                }
             }
 
             await WriteJsonAsync(context.Response, HttpStatusCode.NotFound, new { error = "接口不存在。" }, cancellationToken);
