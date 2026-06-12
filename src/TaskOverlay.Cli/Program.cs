@@ -58,6 +58,7 @@ static async Task<CommandResult> ExecuteAsync(HttpClient client, Command command
         "health" => await SendAsync(client, HttpMethod.Get, "health"),
         "task" => await ExecuteTaskAsync(client, command.Action, command.Arguments, cli),
         "proposal" => await ExecuteProposalAsync(client, command.Action, command.Arguments, cli),
+        "plan" => await ExecutePlanAsync(client, command.Action, command.Arguments, cli),
         _ => throw new ArgumentException($"未知命令：{command.Group} {command.Action}".Trim())
     };
 }
@@ -115,6 +116,15 @@ static async Task<CommandResult> ExecuteProposalAsync(HttpClient client, string 
         default:
             throw new ArgumentException($"未知 proposal 子命令：{action}");
     }
+}
+
+static async Task<CommandResult> ExecutePlanAsync(HttpClient client, string action, IReadOnlyList<string> arguments, CliArguments cli)
+{
+    return action switch
+    {
+        "" or "tomorrow" => await SendAsync(client, HttpMethod.Post, "api/plans/tomorrow", ReadPlanningRequest(cli, arguments)),
+        _ => throw new ArgumentException($"未知 plan 子命令：{action}")
+    };
 }
 
 static async Task<CommandResult> ExecuteForIdsAsync(
@@ -228,6 +238,39 @@ static IReadOnlyList<ExternalTaskProposal> ReadProposalPayloads(CliArguments cli
             Source = cli.Get("source") ?? "cli"
         }
     ];
+}
+
+static PlanningRequest ReadPlanningRequest(CliArguments cli, IReadOnlyList<string> arguments)
+{
+    var modeText = cli.Get("mode") ?? (arguments.Count > 0 ? arguments[0] : "task-list");
+    var request = new PlanningRequest
+    {
+        Mode = modeText.ToLowerInvariant() switch
+        {
+            "task-list" or "tasklist" or "list" or "tasks" or "任务列表" => PlanningMode.TaskList,
+            "time-block" or "timeblock" or "time" or "blocks" or "时间块" => PlanningMode.TimeBlock,
+            _ => throw new ArgumentException("--mode 必须是 task-list 或 time-block。")
+        },
+        TargetDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
+        MaxItems = cli.GetInt("max", cli.GetInt("max-items", 8)),
+        GoalSummary = cli.Get("goal")
+    };
+
+    foreach (var value in cli.GetAll("window").Concat(cli.GetAll("windows")).SelectMany(SplitValues))
+    {
+        var parts = value.Split('-', 2, StringSplitOptions.TrimEntries);
+        if (parts.Length != 2 ||
+            !TimeOnly.TryParse(parts[0], out var start) ||
+            !TimeOnly.TryParse(parts[1], out var end) ||
+            end <= start)
+        {
+            throw new ArgumentException($"时间段格式无效：{value}。示例：09:00-11:30");
+        }
+
+        request.TimeWindows.Add(new PlanningTimeWindow { Start = start, End = end });
+    }
+
+    return request;
 }
 
 static List<T> ReadJsonPayloads<T>(CliArguments cli)
@@ -429,6 +472,11 @@ static Command NormalizeCommand(IReadOnlyList<string> positionals)
     if (first is "add") return new Command("proposal", "add", positionals.Skip(1).ToList());
     if (first is "confirm" or "reject") return new Command("proposal", first, positionals.Skip(1).ToList());
     if (first is "complete" or "reopen" or "delete") return new Command("task", first, positionals.Skip(1).ToList());
+    if (first is "plan" or "planning")
+    {
+        var action = positionals.Count > 1 ? positionals[1].ToLowerInvariant() : "tomorrow";
+        return new Command("plan", action, positionals.Skip(2).ToList());
+    }
     if (first is "task" or "t" or "proposal" or "p")
     {
         var group = first is "t" ? "task" : first is "p" ? "proposal" : first;
@@ -589,6 +637,8 @@ static void PrintHelp()
           proposal add <标题> [任务字段] [--source ai]
           proposal confirm|reject <ID...> [--all]   reject --all 需要 --yes
 
+          plan tomorrow [--mode task-list|time-block] [--window 09:00-11:30] [--goal 文本]
+
           health | config [--show-token]
 
         任务字段：
@@ -602,6 +652,7 @@ static void PrintHelp()
           --file tasks.json     从文件读取对象或数组
           --stdin               从标准输入读取 JSON
           支持 --key value、--key=value、短参数 -u -t -o -q -y
+          plan 支持 --max、--window/--windows、--goal。
           Windows PowerShell 5 建议优先使用 --file/--stdin；内联 JSON 的双引号需要写成 \"。
 
         输出：

@@ -26,3 +26,4 @@ E:\work\to-dolist\tests\TaskOverlay.SmokeTests\bin\Debug\net8.0-windows\TaskOver
 E:\work\to-dolist\tests\TaskOverlay.SmokeTests\bin\Debug\net8.0-windows\TaskOverlay.App.exe
 E:\work\to-dolist\tests\TaskOverlay.SmokeTests\bin\Debug\net8.0-windows\TaskOverlay.App.dll
 E:\work\to-dolist\tests\TaskOverlay.SmokeTests\bin\Debug\net8.0-windows\TaskOverlay.App.pdb
+E:\work\to-dolist\tests\TaskOverlay.SmokeTests\obj\Debug\net8.0-windows\TaskOverlay.SmokeTests.sourcelink.json

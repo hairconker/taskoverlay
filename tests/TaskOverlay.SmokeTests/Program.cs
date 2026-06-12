@@ -470,4 +470,32 @@ if ((await tasks.GetTasksAsync(TaskFilter.All)).Count != exportedCount)
     throw new InvalidOperationException("Rejected import changed current JSON data.");
 }
 
-Console.WriteLine($"PASS: JSON tasks, proposals, completion, reminders, search, details, events, recurrence, tags, backup recovery, transfer, settings recovery and single-instance locking. Count={today.Count}");
+var planning = new LocalPlanningService(tasks);
+var taskListPlan = await planning.BuildTomorrowPlanAsync(new PlanningRequest
+{
+    Mode = PlanningMode.TaskList,
+    GoalSummary = "推进 TaskOverlay AI Planning Assistant",
+    MaxItems = 20
+});
+if (taskListPlan.Mode != PlanningMode.TaskList ||
+    taskListPlan.TargetDate != DateOnly.FromDateTime(DateTime.Today.AddDays(1)) ||
+    taskListPlan.Items.Count == 0 ||
+    taskListPlan.Items.All(item => item.Title != "推进长期目标"))
+{
+    throw new InvalidOperationException("Task-list planning did not generate the expected tomorrow review.");
+}
+
+var timeBlockPlan = await planning.BuildTomorrowPlanAsync(new PlanningRequest
+{
+    Mode = PlanningMode.TimeBlock,
+    TimeWindows = [new PlanningTimeWindow { Start = new TimeOnly(8, 0), End = new TimeOnly(9, 0) }],
+    MaxItems = 4
+});
+if (timeBlockPlan.Items.Count == 0 ||
+    timeBlockPlan.Items[0].TimeBlock != "08:00-09:00" ||
+    timeBlockPlan.Items[0].Children.Count == 0)
+{
+    throw new InvalidOperationException("Time-block planning did not preserve hierarchy under the parent planning item.");
+}
+
+Console.WriteLine($"PASS: JSON tasks, proposals, planning, completion, reminders, search, details, events, recurrence, tags, backup recovery, transfer, settings recovery and single-instance locking. Count={today.Count}");

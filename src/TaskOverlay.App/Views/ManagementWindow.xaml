@@ -149,6 +149,27 @@
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
+        <HierarchicalDataTemplate DataType="{x:Type models:PlanningItem}" ItemsSource="{Binding Children}">
+            <Border Background="#FFF8FAFC"
+                    BorderBrush="#FFE2E8F0"
+                    BorderThickness="1"
+                    CornerRadius="7"
+                    Padding="10"
+                    Margin="0,0,0,6">
+                <StackPanel>
+                    <WrapPanel>
+                        <TextBlock Text="{Binding TimeBlock}" Foreground="{StaticResource PrimaryBrush}" FontWeight="SemiBold" Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding Title}" Foreground="{StaticResource Slate900Brush}" FontWeight="SemiBold"/>
+                    </WrapPanel>
+                    <TextBlock Text="{Binding Reason}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                    <WrapPanel Margin="0,4,0,0">
+                        <TextBlock Text="{Binding Kind, StringFormat=类型：{0}}" Foreground="{StaticResource Slate500Brush}" FontSize="11" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding Priority, StringFormat=优先级：{0}}" Foreground="{StaticResource Slate500Brush}" FontSize="11" Margin="0,0,12,0"/>
+                        <TextBlock Text="{Binding DueAt, StringFormat=截止：{0:MM-dd HH:mm}}" Foreground="{StaticResource Slate500Brush}" FontSize="11"/>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+        </HierarchicalDataTemplate>
     </Window.Resources>
 
     <DockPanel>
@@ -336,6 +357,56 @@
                         </Border>
                     </Grid>
                 </DockPanel>
+            </TabItem>
+
+            <TabItem Header="明日规划">
+                <Grid Margin="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="360"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource CardStyle}" Margin="0,0,12,0">
+                        <StackPanel>
+                            <TextBlock Text="生成明日计划" Style="{StaticResource SectionTitleStyle}"/>
+                            <TextBlock Text="V1 使用本地算法，不调用 AI。新增任务进入外部提案，已有任务调整只作为建议展示。" Style="{StaticResource HintStyle}" Margin="0,4,0,12"/>
+                            <TextBlock Text="规划模式"/>
+                            <ComboBox x:Name="PlanningModeBox" SelectedIndex="0" SelectedValuePath="Tag">
+                                <ComboBoxItem Content="任务列表模式" Tag="{x:Static models:PlanningMode.TaskList}"/>
+                                <ComboBoxItem Content="时间块模式" Tag="{x:Static models:PlanningMode.TimeBlock}"/>
+                            </ComboBox>
+                            <TextBlock Text="可用时间段（时间块模式）"/>
+                            <TextBox x:Name="PlanningWindowsBox" Text="09:00-11:30,14:00-17:30"/>
+                            <TextBlock Text="多个时间段用逗号分隔；任务列表模式可留空。" Style="{StaticResource HintStyle}"/>
+                            <TextBlock Text="目标摘要（可选）"/>
+                            <TextBox x:Name="PlanningGoalBox" Height="80" AcceptsReturn="True" TextWrapping="Wrap"/>
+                            <TextBlock Text="本地算法会把目标摘要转成待确认的建议任务。" Style="{StaticResource HintStyle}"/>
+                            <TextBlock Text="最多建议数量"/>
+                            <TextBox x:Name="PlanningMaxItemsBox" Text="8"/>
+                            <WrapPanel Margin="0,10,0,0">
+                                <Button Content="生成明日计划" Style="{StaticResource PrimaryButtonStyle}" Click="GeneratePlan_OnClick"/>
+                                <Button Content="新增建议进提案箱" Click="AddPlanProposals_OnClick"/>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                                <TextBlock Text="规划建议" Style="{StaticResource SectionTitleStyle}"/>
+                                <TextBlock x:Name="PlanningSummaryText" Text="还没有生成计划。" Style="{StaticResource HintStyle}" Margin="0,4,0,0"/>
+                                <ItemsControl ItemsSource="{Binding PlanningWarnings, RelativeSource={RelativeSource AncestorType=Window}}" Margin="0,8,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Foreground="#FFB45309" FontSize="12" TextWrapping="Wrap"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                            <TreeView ItemsSource="{Binding PlanningItems, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      BorderThickness="0"
+                                      Background="Transparent"/>
+                        </DockPanel>
+                    </Border>
+                </Grid>
             </TabItem>
 
             <TabItem Header="外部提案">

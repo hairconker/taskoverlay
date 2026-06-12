@@ -46,7 +46,7 @@ namespace TaskOverlay.App {
         /// InitializeComponent
         /// </summary>
         [System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "8.0.27.0")]
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "8.0.28.0")]
         public void InitializeComponent() {
             if (_contentLoaded) {
                 return;
@@ -66,7 +66,7 @@ namespace TaskOverlay.App {
         /// </summary>
         [System.STAThreadAttribute()]
         [System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "8.0.27.0")]
+        [System.CodeDom.Compiler.GeneratedCodeAttribute("PresentationBuildTasks", "8.0.28.0")]
         public static void Main() {
             TaskOverlay.App.App app = new TaskOverlay.App.App();
             app.InitializeComponent();

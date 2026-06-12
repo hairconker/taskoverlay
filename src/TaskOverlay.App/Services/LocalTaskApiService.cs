@@ -108,6 +108,20 @@ public sealed class LocalTaskApiService(
                 return;
             }
 
+            if (path == "/api/plans/tomorrow" &&
+                context.Request.HttpMethod is "GET" or "POST")
+            {
+                var request = context.Request.HttpMethod == "POST"
+                    ? await ReadJsonAsync<PlanningRequest>(context.Request, cancellationToken)
+                    : BuildPlanningRequestFromQuery(context.Request);
+                request.TargetDate = request.TargetDate == default
+                    ? DateOnly.FromDateTime(DateTime.Today.AddDays(1))
+                    : request.TargetDate;
+                var planning = new LocalPlanningService(tasksProvider());
+                await WriteJsonAsync(context.Response, HttpStatusCode.OK, await planning.BuildTomorrowPlanAsync(request, cancellationToken), cancellationToken);
+                return;
+            }
+
             if (context.Request.HttpMethod == "POST" && path == "/api/proposals")
             {
                 var proposal = await ReadJsonAsync<ExternalTaskProposal>(context.Request, cancellationToken);
@@ -222,6 +236,39 @@ public sealed class LocalTaskApiService(
     {
         var value = await JsonSerializer.DeserializeAsync<T>(request.InputStream, JsonOptions, cancellationToken);
         return value ?? throw new InvalidDataException("请求 JSON 不能为空。");
+    }
+
+    private static PlanningRequest BuildPlanningRequestFromQuery(HttpListenerRequest request)
+    {
+        var modeText = request.QueryString["mode"];
+        var mode = Enum.TryParse<PlanningMode>(modeText, true, out var parsedMode)
+            ? parsedMode
+            : PlanningMode.TaskList;
+        var planningRequest = new PlanningRequest
+        {
+            Mode = mode,
+            TargetDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
+            GoalSummary = request.QueryString["goal"]
+        };
+
+        if (int.TryParse(request.QueryString["maxItems"], out var maxItems))
+        {
+            planningRequest.MaxItems = maxItems;
+        }
+
+        foreach (var window in (request.QueryString["windows"] ?? string.Empty)
+                     .Split([',', '，', ';', '；'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var parts = window.Split('-', 2, StringSplitOptions.TrimEntries);
+            if (parts.Length == 2 &&
+                TimeOnly.TryParse(parts[0], out var start) &&
+                TimeOnly.TryParse(parts[1], out var end))
+            {
+                planningRequest.TimeWindows.Add(new PlanningTimeWindow { Start = start, End = end });
+            }
+        }
+
+        return planningRequest;
     }
 
     private static async Task WriteJsonAsync(HttpListenerResponse response, HttpStatusCode statusCode, object value, CancellationToken cancellationToken)

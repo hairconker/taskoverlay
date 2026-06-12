@@ -29,3 +29,4 @@ E:\work\to-dolist\src\TaskOverlay.App\obj\Release\net8.0-windows\refint\TaskOver
 E:\work\to-dolist\src\TaskOverlay.App\obj\Release\net8.0-windows\TaskOverlay.App.pdb
 E:\work\to-dolist\src\TaskOverlay.App\obj\Release\net8.0-windows\TaskOverlay.App.genruntimeconfig.cache
 E:\work\to-dolist\src\TaskOverlay.App\obj\Release\net8.0-windows\ref\TaskOverlay.App.dll
+E:\work\to-dolist\src\TaskOverlay.App\obj\Release\net8.0-windows\TaskOverlay.App.sourcelink.json

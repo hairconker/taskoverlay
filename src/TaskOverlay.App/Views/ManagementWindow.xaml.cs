@@ -55,6 +55,9 @@ public partial class ManagementWindow : Window
     }
 
     public ObservableCollection<ExternalTaskProposal> ProposalItems { get; } = [];
+    public ObservableCollection<PlanningItem> PlanningItems { get; } = [];
+    public ObservableCollection<string> PlanningWarnings { get; } = [];
+    private PlanningReview? _lastPlanningReview;
 
     public void UpdateServices(TaskApplicationService tasks, ITaskRepository repository)
     {
@@ -149,6 +152,71 @@ public partial class ManagementWindow : Window
 
     private async void RefreshProposals_OnClick(object sender, RoutedEventArgs e) => await LoadProposalsAsync();
 
+    private async void GeneratePlan_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (!TryBuildPlanningRequest(out var request))
+        {
+            return;
+        }
+
+        try
+        {
+            var planning = new LocalPlanningService(_tasks);
+            _lastPlanningReview = await planning.BuildTomorrowPlanAsync(request);
+            PlanningItems.Clear();
+            PlanningWarnings.Clear();
+            foreach (var item in _lastPlanningReview.Items)
+            {
+                PlanningItems.Add(item);
+            }
+            foreach (var warning in _lastPlanningReview.Warnings)
+            {
+                PlanningWarnings.Add(warning);
+            }
+
+            PlanningSummaryText.Text = _lastPlanningReview.Summary;
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(this, $"生成明日计划失败：{ex.Message}", "明日规划", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private async void AddPlanProposals_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (_lastPlanningReview is null)
+        {
+            System.Windows.MessageBox.Show(this, "请先生成明日计划。", "明日规划", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var proposedItems = FlattenPlanningItems(_lastPlanningReview.Items)
+            .Where(item => item.Kind == PlanningItemKind.ProposedTask)
+            .ToList();
+        if (proposedItems.Count == 0)
+        {
+            System.Windows.MessageBox.Show(this, "当前计划没有需要新增到提案箱的任务。", "明日规划", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        foreach (var item in proposedItems)
+        {
+            await _proposals.AddAsync(new ExternalTaskProposal
+            {
+                Title = item.Title,
+                Notes = BuildProposalNotes(item),
+                Priority = item.Priority,
+                DueAt = item.DueAt,
+                ReminderAt = item.ReminderAt,
+                Tags = item.Tags.Select(tag => new Tag { Name = tag.Name, Color = tag.Color }).ToList(),
+                Source = "planning"
+            });
+        }
+
+        await LoadProposalsAsync();
+        System.Windows.MessageBox.Show(this, $"已加入 {proposedItems.Count} 条外部提案，请到“外部提案”页确认。", "明日规划", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
     private void Proposals_OnProposalsChanged(object? sender, EventArgs e)
     {
         Dispatcher.BeginInvoke(async () => await LoadProposalsAsync());
@@ -162,6 +230,73 @@ public partial class ManagementWindow : Window
         {
             ProposalItems.Add(proposal);
         }
+    }
+
+    private bool TryBuildPlanningRequest(out PlanningRequest request)
+    {
+        request = new PlanningRequest
+        {
+            Mode = PlanningModeBox.SelectedValue is PlanningMode selectedMode ? selectedMode : PlanningMode.TaskList,
+            TargetDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
+            GoalSummary = string.IsNullOrWhiteSpace(PlanningGoalBox.Text) ? null : PlanningGoalBox.Text.Trim()
+        };
+
+        if (!int.TryParse(PlanningMaxItemsBox.Text.Trim(), out var maxItems) || maxItems is < 1 or > 30)
+        {
+            System.Windows.MessageBox.Show(this, "最多建议数量必须是 1 到 30 的整数。", "明日规划", MessageBoxButton.OK, MessageBoxImage.Warning);
+            PlanningMaxItemsBox.Focus();
+            return false;
+        }
+        request.MaxItems = maxItems;
+
+        foreach (var window in PlanningWindowsBox.Text
+                     .Split([',', '，', ';', '；'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var parts = window.Split('-', 2, StringSplitOptions.TrimEntries);
+            if (parts.Length != 2 ||
+                !TimeOnly.TryParse(parts[0], out var start) ||
+                !TimeOnly.TryParse(parts[1], out var end) ||
+                end <= start)
+            {
+                System.Windows.MessageBox.Show(this, $"时间段格式无效：{window}\n示例：09:00-11:30", "明日规划", MessageBoxButton.OK, MessageBoxImage.Warning);
+                PlanningWindowsBox.Focus();
+                return false;
+            }
+
+            request.TimeWindows.Add(new PlanningTimeWindow { Start = start, End = end });
+        }
+
+        return true;
+    }
+
+    private static IEnumerable<PlanningItem> FlattenPlanningItems(IEnumerable<PlanningItem> items)
+    {
+        foreach (var item in items)
+        {
+            yield return item;
+            foreach (var child in FlattenPlanningItems(item.Children))
+            {
+                yield return child;
+            }
+        }
+    }
+
+    private static string BuildProposalNotes(PlanningItem item)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(item.Notes))
+        {
+            parts.Add(item.Notes);
+        }
+        if (!string.IsNullOrWhiteSpace(item.TimeBlock))
+        {
+            parts.Add($"建议时间：{item.TimeBlock}");
+        }
+        if (!string.IsNullOrWhiteSpace(item.Reason))
+        {
+            parts.Add($"规划理由：{item.Reason}");
+        }
+        return string.Join(Environment.NewLine, parts);
     }
 
     private async void SaveSettings_OnClick(object sender, RoutedEventArgs e)

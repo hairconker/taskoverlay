@@ -13,3 +13,4 @@ E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Debug\net8.0-windows\TaskOv
 E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Debug\net8.0-windows\refint\TaskOverlay.Infrastructure.dll
 E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Debug\net8.0-windows\TaskOverlay.Infrastructure.pdb
 E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Debug\net8.0-windows\ref\TaskOverlay.Infrastructure.dll
+E:\work\to-dolist\src\TaskOverlay.Infrastructure\obj\Debug\net8.0-windows\TaskOverlay.Infrastructure.sourcelink.json

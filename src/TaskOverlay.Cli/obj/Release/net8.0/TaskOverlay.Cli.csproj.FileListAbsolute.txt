@@ -16,3 +16,4 @@ E:\work\to-dolist\src\TaskOverlay.Cli\obj\Release\net8.0\refint\TaskOverlay.Cli.
 E:\work\to-dolist\src\TaskOverlay.Cli\obj\Release\net8.0\TaskOverlay.Cli.pdb
 E:\work\to-dolist\src\TaskOverlay.Cli\obj\Release\net8.0\TaskOverlay.Cli.genruntimeconfig.cache
 E:\work\to-dolist\src\TaskOverlay.Cli\obj\Release\net8.0\ref\TaskOverlay.Cli.dll
+E:\work\to-dolist\src\TaskOverlay.Cli\obj\Release\net8.0\TaskOverlay.Cli.sourcelink.json

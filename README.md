@@ -11,6 +11,7 @@ TaskOverlay 是一个 Windows 桌面悬浮待办工具。默认使用本地 JSON
 5. 使用“日历规划”查看指定日期安排，使用“数据管理”导出或导入 JSON 备份。
 6. 在“设置”中查找或修改编辑模式快捷键、透明度、置顶、开机自启和存储方式。旧版 `~+1` 仍可兼容，但在游戏、管理员窗口或反作弊环境中可能失效，建议使用标准组合键。
 7. CLI、AI 或其他本地程序提交的任务会进入“外部提案”，确认后才加入正式任务列表。
+8. 在“明日规划”中选择任务列表模式或时间块模式，使用本地算法生成明日计划建议。
 
 任务中心和系统托盘菜单都提供退出入口。应用使用单实例锁，重复启动不会创建第二个悬浮窗。
 
@@ -104,6 +105,10 @@ TaskOverlay.Cli.exe proposal list --output ids
 # 从 JSON 对象或数组导入
 TaskOverlay.Cli.exe proposal add --file proposals.json
 Get-Content tasks.json -Raw | TaskOverlay.Cli.exe task add --stdin
+
+# 本地明日规划，不调用 AI
+TaskOverlay.Cli.exe plan tomorrow --mode task-list --goal "推进 TaskOverlay"
+TaskOverlay.Cli.exe plan tomorrow --mode time-block --window "09:00-11:30,14:00-17:30"
 ```
 
 Windows PowerShell 5 会处理原生命令参数中的双引号，因此复杂 JSON 推荐使用 `--file` 或 `--stdin`；使用 `--json` 时需要将内部双引号转义为 `\"`。
@@ -124,8 +129,19 @@ Windows PowerShell 5 会处理原生命令参数中的双引号，因此复杂 J
 - `DELETE /api/proposals/{id}/reject`
 - `POST /api/tasks/{id}/complete`
 - `DELETE /api/tasks/{id}/delete`
+- `GET /api/plans/tomorrow?mode=taskList&windows=09:00-11:30`
+- `POST /api/plans/tomorrow`
 
 除健康检查外，请在请求中发送 `Authorization: Bearer <令牌>`。AI 工具可以直接调用这些接口，也可以执行 CLI；建议始终先提交提案，再由用户确认。
+
+## 明日规划 V1
+
+明日规划使用本地算法，运行时不依赖 AI。它会读取今天、明天、过期和未来任务，生成待确认的规划建议。
+
+- `任务列表模式`：输出按优先级排序的明日任务建议。
+- `时间块模式`：按可用时间段安排任务，并在需要时保留父子层级拆分。
+- 新增建议可提交到“外部提案”；确认后才会变成正式任务。
+- 已有任务调整只作为建议展示，不会自动修改正式任务。
 
 Release 可执行文件：
 

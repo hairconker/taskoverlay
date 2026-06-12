@@ -9,3 +9,4 @@ E:\work\to-dolist\src\TaskOverlay.Core\obj\Debug\net8.0\TaskOverlay.Core.dll
 E:\work\to-dolist\src\TaskOverlay.Core\obj\Debug\net8.0\refint\TaskOverlay.Core.dll
 E:\work\to-dolist\src\TaskOverlay.Core\obj\Debug\net8.0\TaskOverlay.Core.pdb
 E:\work\to-dolist\src\TaskOverlay.Core\obj\Debug\net8.0\ref\TaskOverlay.Core.dll
+E:\work\to-dolist\src\TaskOverlay.Core\obj\Debug\net8.0\TaskOverlay.Core.sourcelink.json

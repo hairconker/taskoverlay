@@ -32,6 +32,30 @@ _Avoid_: repeating task when the recurrence is specifically daily
 A pending task suggestion submitted by CLI, AI, or another local program. It is not a Task until the user confirms it.
 _Avoid_: AI task, external task, draft task
 
+**Planning Assistant**:
+The assistant behavior that analyzes goals and existing tasks, then produces a user-confirmed plan. It can suggest tasks and schedule changes, but it does not directly mutate confirmed Tasks without user approval.
+_Avoid_: autopilot, AI scheduler
+
+**Goal Library**:
+The user's durable collection of long-term goals, priorities, and planning preferences. It guides planning but is not itself a task list.
+_Avoid_: backlog, task archive
+
+**Local Planning Algorithm**:
+The deterministic planning logic that works without AI. It ranks goals and tasks, proposes tomorrow's plan, and provides a baseline that AI can refine instead of replacing.
+_Avoid_: AI planner when no model is involved
+
+**User-Facing Planning Review**:
+The Chinese-language review artifact shown to the user before implementing or applying a plan. Project context may stay in English, but confirmation material should be presented in Chinese.
+_Avoid_: English-only confirmation
+
+**Planning Mode**:
+The user-selected output shape for a planning run. Task List Mode produces an ordered list of suggested tasks; Time Block Mode assigns suggested work to specific time ranges.
+_Avoid_: fixed schedule when the user has not selected time blocks
+
+**Planning Item Hierarchy**:
+The parent-child structure inside a planning result. When the assistant splits a broad task or time block into smaller items, the child items stay grouped under the original parent item.
+_Avoid_: flat split tasks when the parent context matters
+
 **Local API**:
 The localhost-only HTTP API exposed by the desktop app. It requires the configured API token except for health checks.
 _Avoid_: public API, cloud API
@@ -55,6 +79,11 @@ _Avoid_: source file
 ## Relationships
 
 - An **External Proposal** can become a **Task** only after confirmation.
+- The **Planning Assistant** reads the **Goal Library** and existing **Task Data** to produce suggestions.
+- The **Local Planning Algorithm** must work without AI; AI may refine its output but should not be required for basic planning.
+- A **User-Facing Planning Review** is shown in Chinese before implementation or plan application.
+- Each planning run has a user-selected **Planning Mode**: Task List Mode or Time Block Mode.
+- Split planning suggestions preserve **Planning Item Hierarchy** so child items remain under the broad parent task or time block.
 - The **CLI** talks to the **Local API**; it does not modify task files directly.
 - The **Overlay** is optimized for quick use; the **Task Center** owns detailed management.
 - **Task Data** must remain portable enough to survive reinstall or relocation.
