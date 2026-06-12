@@ -1,0 +1,4 @@
+interface:
+  display_name: "TaskOverlay Grill With Docs"
+  short_description: "Plan TaskOverlay changes with sharp questions and durable docs."
+  default_prompt: "Use the TaskOverlay grill-with-docs workflow: inspect code and CONTEXT.md, ask one focused question at a time when needed, update project language, and create ADRs only for durable trade-off decisions."
