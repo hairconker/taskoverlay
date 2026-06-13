@@ -409,6 +409,138 @@
                 </Grid>
             </TabItem>
 
+            <TabItem x:Name="GoalsTab" Header="目标库">
+                <Grid Margin="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="360"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource CardStyle}" Margin="0,0,12,0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock Text="长期目标" Style="{StaticResource SectionTitleStyle}"/>
+                                <TextBlock x:Name="GoalEditorModeText" Text="新增目标" Style="{StaticResource HintStyle}" Margin="0,4,0,12"/>
+
+                                <TextBlock Text="目标标题"/>
+                                <TextBox x:Name="GoalTitleBox"/>
+                                <TextBlock Text="描述"/>
+                                <TextBox x:Name="GoalDescriptionBox" Height="90" AcceptsReturn="True" TextWrapping="Wrap"/>
+
+                                <Grid Margin="0,6,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="优先级"/>
+                                        <ComboBox x:Name="GoalPriorityBox" SelectedValuePath="Tag">
+                                            <ComboBoxItem Content="高" Tag="{x:Static models:TaskPriority.High}"/>
+                                            <ComboBoxItem Content="普通" Tag="{x:Static models:TaskPriority.Normal}"/>
+                                            <ComboBoxItem Content="低" Tag="{x:Static models:TaskPriority.Low}"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="状态"/>
+                                        <ComboBox x:Name="GoalStatusBox" SelectedValuePath="Tag">
+                                            <ComboBoxItem Content="进行中" Tag="{x:Static models:GoalStatus.Active}"/>
+                                            <ComboBoxItem Content="暂停" Tag="{x:Static models:GoalStatus.Paused}"/>
+                                            <ComboBoxItem Content="完成" Tag="{x:Static models:GoalStatus.Completed}"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Margin="0,6,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="时间范围"/>
+                                        <ComboBox x:Name="GoalHorizonBox" SelectedValuePath="Tag">
+                                            <ComboBoxItem Content="长期" Tag="{x:Static models:GoalTimeHorizon.LongTerm}"/>
+                                            <ComboBoxItem Content="本月" Tag="{x:Static models:GoalTimeHorizon.ThisMonth}"/>
+                                            <ComboBoxItem Content="本周" Tag="{x:Static models:GoalTimeHorizon.ThisWeek}"/>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="每日投入分钟"/>
+                                        <TextBox x:Name="GoalDailyMinutesBox"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock Text="标签" Margin="0,7,0,0"/>
+                                <TextBox x:Name="GoalTagsBox"/>
+                                <TextBlock Text="多个标签用逗号分隔；明日规划会继承这些标签。" Style="{StaticResource HintStyle}"/>
+
+                                <TextBlock Text="下一里程碑" Margin="0,7,0,0"/>
+                                <TextBox x:Name="GoalMilestoneTitleBox"/>
+                                <TextBlock Text="里程碑日期"/>
+                                <DatePicker x:Name="GoalMilestoneTargetBox"/>
+                                <TextBlock Text="当前版本先管理一个最近里程碑；完整里程碑列表保留在数据文件中。" Style="{StaticResource HintStyle}"/>
+
+                                <WrapPanel Margin="0,12,0,0">
+                                    <Button Content="保存目标" Style="{StaticResource PrimaryButtonStyle}" Click="SaveGoal_OnClick"/>
+                                    <Button Content="新建" Click="NewGoal_OnClick"/>
+                                    <Button Content="刷新" Click="RefreshGoals_OnClick"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                                <TextBlock Text="目标列表" Style="{StaticResource SectionTitleStyle}"/>
+                                <TextBlock Text="进行中的目标会参与本地明日规划；暂停和完成的目标只保存，不会自动生成任务。" Style="{StaticResource HintStyle}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Grid>
+                                <DataGrid ItemsSource="{Binding GoalItems, RelativeSource={RelativeSource AncestorType=Window}}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          IsReadOnly="True">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Binding="{Binding Title}" Header="目标" Width="*"/>
+                                        <DataGridTextColumn Binding="{Binding Priority}" Header="优先级" Width="80"/>
+                                        <DataGridTextColumn Binding="{Binding Status}" Header="状态" Width="80"/>
+                                        <DataGridTextColumn Binding="{Binding TimeHorizon}" Header="范围" Width="90"/>
+                                        <DataGridTextColumn Binding="{Binding DailyBudgetMinutes}" Header="每日分钟" Width="90"/>
+                                        <DataGridTextColumn Binding="{Binding TagSummary}" Header="标签" Width="140"/>
+                                        <DataGridTextColumn Binding="{Binding Milestones.Count}" Header="里程碑" Width="80"/>
+                                        <DataGridTemplateColumn Header="操作" Width="130">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Button Content="编辑" Style="{StaticResource PrimaryButtonStyle}" Click="EditGoal_OnClick"/>
+                                                        <Button Content="删除" Style="{StaticResource DangerButtonStyle}" Click="DeleteGoal_OnClick"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <TextBlock Text="还没有长期目标。先在左侧新增一个，明日规划会自动读取。"
+                                           Foreground="{StaticResource Slate500Brush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding GoalItems.Count, RelativeSource={RelativeSource AncestorType=Window}}" Value="0">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
             <TabItem Header="外部提案">
                 <DockPanel Margin="8">
                     <Border DockPanel.Dock="Top" Style="{StaticResource CardStyle}" Margin="0,0,0,10">

@@ -44,15 +44,19 @@ public partial class ManagementWindow : Window
         _viewModel = new TaskListViewModel(tasks);
         DataContext = _viewModel;
         LoadSettings();
+        ClearGoalEditor();
         Loaded += async (_, _) =>
         {
             await _viewModel.LoadAsync();
             await LoadProposalsAsync();
+            await LoadGoalsAsync();
         };
         _proposals.ProposalsChanged += Proposals_OnProposalsChanged;
+        _goals.GoalsChanged += Goals_OnGoalsChanged;
         Closed += (_, _) =>
         {
             _proposals.ProposalsChanged -= Proposals_OnProposalsChanged;
+            _goals.GoalsChanged -= Goals_OnGoalsChanged;
             _viewModel.Dispose();
         };
     }
@@ -60,7 +64,9 @@ public partial class ManagementWindow : Window
     public ObservableCollection<ExternalTaskProposal> ProposalItems { get; } = [];
     public ObservableCollection<PlanningItem> PlanningItems { get; } = [];
     public ObservableCollection<string> PlanningWarnings { get; } = [];
+    public ObservableCollection<Goal> GoalItems { get; } = [];
     private PlanningReview? _lastPlanningReview;
+    private Goal? _editingGoal;
 
     public void UpdateServices(TaskApplicationService tasks, ITaskRepository repository)
     {
@@ -95,6 +101,10 @@ public partial class ManagementWindow : Window
         {
             _viewModel.IsDateView = false;
             await _viewModel.LoadAsync();
+        }
+        else if (TaskTabs.SelectedItem == GoalsTab)
+        {
+            await LoadGoalsAsync();
         }
     }
 
@@ -154,6 +164,63 @@ public partial class ManagementWindow : Window
     }
 
     private async void RefreshProposals_OnClick(object sender, RoutedEventArgs e) => await LoadProposalsAsync();
+
+    private async void RefreshGoals_OnClick(object sender, RoutedEventArgs e) => await LoadGoalsAsync();
+
+    private void NewGoal_OnClick(object sender, RoutedEventArgs e) => ClearGoalEditor();
+
+    private async void SaveGoal_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (!TryBuildGoalFromEditor(out var goal))
+        {
+            return;
+        }
+
+        try
+        {
+            await _goals.SaveGoalAsync(goal);
+            await LoadGoalsAsync();
+            ClearGoalEditor();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(this, $"保存目标失败：{ex.Message}", "目标库", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void EditGoal_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).DataContext is Goal goal)
+        {
+            BeginEditGoal(goal);
+        }
+    }
+
+    private async void DeleteGoal_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (((FrameworkElement)sender).DataContext is not Goal goal)
+        {
+            return;
+        }
+
+        var result = System.Windows.MessageBox.Show(
+            this,
+            $"确定删除长期目标“{goal.Title}”吗？删除后只能通过 goals.bak.json 恢复。",
+            "确认删除目标",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+        if (result != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        await _goals.DeleteGoalAsync(goal.Id);
+        await LoadGoalsAsync();
+        if (_editingGoal?.Id == goal.Id)
+        {
+            ClearGoalEditor();
+        }
+    }
 
     private async void GeneratePlan_OnClick(object sender, RoutedEventArgs e)
     {
@@ -234,6 +301,154 @@ public partial class ManagementWindow : Window
             ProposalItems.Add(proposal);
         }
     }
+
+    private void Goals_OnGoalsChanged(object? sender, EventArgs e)
+    {
+        Dispatcher.BeginInvoke(async () => await LoadGoalsAsync());
+    }
+
+    private async Task LoadGoalsAsync()
+    {
+        var goals = await _goals.GetGoalsAsync();
+        GoalItems.Clear();
+        foreach (var goal in goals)
+        {
+            GoalItems.Add(goal);
+        }
+    }
+
+    private void BeginEditGoal(Goal goal)
+    {
+        _editingGoal = goal;
+        GoalTitleBox.Text = goal.Title;
+        GoalDescriptionBox.Text = goal.Description ?? string.Empty;
+        GoalPriorityBox.SelectedValue = goal.Priority;
+        GoalStatusBox.SelectedValue = goal.Status;
+        GoalHorizonBox.SelectedValue = goal.TimeHorizon;
+        GoalDailyMinutesBox.Text = goal.DailyBudgetMinutes?.ToString() ?? string.Empty;
+        GoalTagsBox.Text = goal.TagSummary;
+
+        var milestone = goal.Milestones.FirstOrDefault(m => m.Status != MilestoneStatus.Completed)
+            ?? goal.Milestones.FirstOrDefault();
+        GoalMilestoneTitleBox.Text = milestone?.Title ?? string.Empty;
+        GoalMilestoneTargetBox.SelectedDate = milestone?.TargetDate?.ToDateTime(TimeOnly.MinValue);
+        GoalEditorModeText.Text = $"正在编辑：#{goal.Id}";
+    }
+
+    private void ClearGoalEditor()
+    {
+        _editingGoal = null;
+        GoalTitleBox.Text = string.Empty;
+        GoalDescriptionBox.Text = string.Empty;
+        GoalPriorityBox.SelectedValue = TaskPriority.Normal;
+        GoalStatusBox.SelectedValue = GoalStatus.Active;
+        GoalHorizonBox.SelectedValue = GoalTimeHorizon.LongTerm;
+        GoalDailyMinutesBox.Text = string.Empty;
+        GoalTagsBox.Text = string.Empty;
+        GoalMilestoneTitleBox.Text = string.Empty;
+        GoalMilestoneTargetBox.SelectedDate = null;
+        GoalEditorModeText.Text = "新增目标";
+    }
+
+    private bool TryBuildGoalFromEditor(out Goal goal)
+    {
+        goal = new Goal();
+        var title = GoalTitleBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            System.Windows.MessageBox.Show(this, "目标标题不能为空。", "目标库", MessageBoxButton.OK, MessageBoxImage.Warning);
+            GoalTitleBox.Focus();
+            return false;
+        }
+
+        int? dailyBudgetMinutes = null;
+        if (!string.IsNullOrWhiteSpace(GoalDailyMinutesBox.Text))
+        {
+            if (!int.TryParse(GoalDailyMinutesBox.Text.Trim(), out var minutes) || minutes is < 1 or > 1440)
+            {
+                System.Windows.MessageBox.Show(this, "每日投入必须是 1 到 1440 的整数，或留空。", "目标库", MessageBoxButton.OK, MessageBoxImage.Warning);
+                GoalDailyMinutesBox.Focus();
+                return false;
+            }
+
+            dailyBudgetMinutes = minutes;
+        }
+
+        var now = DateTime.Now;
+        goal.Id = _editingGoal?.Id ?? 0;
+        goal.CreatedAt = _editingGoal?.CreatedAt ?? now;
+        goal.UpdatedAt = now;
+        goal.Title = title;
+        goal.Description = string.IsNullOrWhiteSpace(GoalDescriptionBox.Text) ? null : GoalDescriptionBox.Text.Trim();
+        goal.Priority = GoalPriorityBox.SelectedValue is TaskPriority priority ? priority : TaskPriority.Normal;
+        goal.Status = GoalStatusBox.SelectedValue is GoalStatus status ? status : GoalStatus.Active;
+        goal.TimeHorizon = GoalHorizonBox.SelectedValue is GoalTimeHorizon horizon ? horizon : GoalTimeHorizon.LongTerm;
+        goal.DailyBudgetMinutes = dailyBudgetMinutes;
+        goal.Tags = GoalTagsBox.Text
+            .Split([',', '，'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(name => new Tag { Name = name })
+            .ToList();
+        goal.Milestones = BuildEditedMilestones(_editingGoal?.Milestones ?? []);
+        goal.TaskLinks = _editingGoal?.TaskLinks.Select(CloneTaskLink).ToList() ?? [];
+        return true;
+    }
+
+    private List<GoalMilestone> BuildEditedMilestones(IReadOnlyList<GoalMilestone> existingMilestones)
+    {
+        var milestones = existingMilestones.Select(CloneMilestone).ToList();
+        var milestoneTitle = GoalMilestoneTitleBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(milestoneTitle))
+        {
+            return milestones;
+        }
+
+        var targetDate = GoalMilestoneTargetBox.SelectedDate is DateTime selectedDate
+            ? DateOnly.FromDateTime(selectedDate)
+            : (DateOnly?)null;
+        var now = DateTime.Now;
+        var milestone = milestones.FirstOrDefault(m => m.Status != MilestoneStatus.Completed)
+            ?? milestones.FirstOrDefault();
+        if (milestone is null)
+        {
+            milestones.Add(new GoalMilestone
+            {
+                Title = milestoneTitle,
+                TargetDate = targetDate,
+                Status = MilestoneStatus.NotStarted,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+        }
+        else
+        {
+            milestone.Title = milestoneTitle;
+            milestone.TargetDate = targetDate;
+            milestone.UpdatedAt = now;
+        }
+
+        return milestones;
+    }
+
+    private static GoalMilestone CloneMilestone(GoalMilestone milestone) => new()
+    {
+        Id = milestone.Id,
+        GoalId = milestone.GoalId,
+        Title = milestone.Title,
+        TargetDate = milestone.TargetDate,
+        Status = milestone.Status,
+        CreatedAt = milestone.CreatedAt,
+        UpdatedAt = milestone.UpdatedAt
+    };
+
+    private static GoalTaskLink CloneTaskLink(GoalTaskLink link) => new()
+    {
+        Id = link.Id,
+        GoalId = link.GoalId,
+        TaskId = link.TaskId,
+        ProposalId = link.ProposalId,
+        Note = link.Note,
+        CreatedAt = link.CreatedAt
+    };
 
     private bool TryBuildPlanningRequest(out PlanningRequest request)
     {
