@@ -47,6 +47,8 @@ public sealed class PlanningItem
     public Guid Id { get; set; } = Guid.NewGuid();
     public PlanningItemKind Kind { get; set; }
     public long? TaskId { get; set; }
+    public long? GoalId { get; set; }
+    public string? GoalTitle { get; set; }
     public string Title { get; set; } = string.Empty;
     public string? Notes { get; set; }
     public TaskPriority Priority { get; set; } = TaskPriority.Normal;

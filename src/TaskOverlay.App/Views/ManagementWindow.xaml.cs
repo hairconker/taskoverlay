@@ -510,6 +510,10 @@ public partial class ManagementWindow : Window
         {
             parts.Add($"建议时间：{item.TimeBlock}");
         }
+        if (item.GoalId is not null && !string.IsNullOrWhiteSpace(item.GoalTitle))
+        {
+            parts.Add($"关联目标：#{item.GoalId} {item.GoalTitle}");
+        }
         if (!string.IsNullOrWhiteSpace(item.Reason))
         {
             parts.Add($"规划理由：{item.Reason}");

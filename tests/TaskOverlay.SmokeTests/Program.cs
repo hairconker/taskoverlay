@@ -509,6 +509,11 @@ if (taskListPlan.Mode != PlanningMode.TaskList ||
 {
     throw new InvalidOperationException("Task-list planning did not use active goals.");
 }
+var goalPlanningItem = taskListPlan.Items.First(item => item.Title.Contains("AI Agent 工程能力", StringComparison.Ordinal));
+if (goalPlanningItem.GoalId != savedGoal.Id || goalPlanningItem.GoalTitle != savedGoal.Title)
+{
+    throw new InvalidOperationException("Goal-derived planning item did not preserve its goal source.");
+}
 
 var timeBlockPlan = await planning.BuildTomorrowPlanAsync(new PlanningRequest
 {

@@ -162,6 +162,21 @@
                         <TextBlock Text="{Binding Title}" Foreground="{StaticResource Slate900Brush}" FontWeight="SemiBold"/>
                     </WrapPanel>
                     <TextBlock Text="{Binding Reason}" Style="{StaticResource HintStyle}" Margin="0,3,0,0"/>
+                    <TextBlock Text="{Binding GoalTitle, StringFormat=关联目标：{0}}" Margin="0,2,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource HintStyle}">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding GoalTitle}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding GoalTitle}" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                     <WrapPanel Margin="0,4,0,0">
                         <TextBlock Text="{Binding Kind, StringFormat=类型：{0}}" Foreground="{StaticResource Slate500Brush}" FontSize="11" Margin="0,0,12,0"/>
                         <TextBlock Text="{Binding Priority, StringFormat=优先级：{0}}" Foreground="{StaticResource Slate500Brush}" FontSize="11" Margin="0,0,12,0"/>

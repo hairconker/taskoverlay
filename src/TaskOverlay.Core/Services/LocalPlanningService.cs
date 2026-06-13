@@ -197,6 +197,8 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
             yield return new PlanningItem
             {
                 Kind = PlanningItemKind.ProposedTask,
+                GoalId = goal.Id,
+                GoalTitle = goal.Title,
                 Title = title,
                 Notes = notes.Count == 0 ? null : string.Join(Environment.NewLine, notes),
                 Priority = goal.Priority,
@@ -281,6 +283,8 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
             {
                 Kind = parent.Kind,
                 TaskId = parent.TaskId,
+                GoalId = parent.GoalId,
+                GoalTitle = parent.GoalTitle,
                 Title = $"准备：{parent.Title}",
                 Priority = parent.Priority,
                 TimeBlock = $"{window.Start:HH\\:mm}-{midpoint:HH\\:mm}",
@@ -291,6 +295,8 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
             {
                 Kind = parent.Kind,
                 TaskId = parent.TaskId,
+                GoalId = parent.GoalId,
+                GoalTitle = parent.GoalTitle,
                 Title = $"推进：{parent.Title}",
                 Priority = parent.Priority,
                 TimeBlock = $"{midpoint:HH\\:mm}-{window.End:HH\\:mm}",

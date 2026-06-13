@@ -221,6 +221,7 @@ try {
     Assert-True ($taskListPlan.mode -eq "taskList") "plan tomorrow should support task-list mode"
     Assert-True ($taskListPlan.items.Count -gt 0) "task-list plan should include planning items"
     Assert-True (@($taskListPlan.items | Where-Object { $_.title -match "AI Agent" }).Count -gt 0) "task-list plan should include active goal suggestions"
+    Assert-True (@($taskListPlan.items | Where-Object { $_.goalId -eq $goal.id -and $_.goalTitle -eq $goal.title }).Count -gt 0) "goal-derived plan items should include goal source"
 
     $timeBlockPlan = Invoke-CliJson @("plan", "tomorrow", "--mode", "time-block", "--window", "08:00-09:00")
     Assert-True ($timeBlockPlan.mode -eq "timeBlock") "plan tomorrow should support time-block mode"
