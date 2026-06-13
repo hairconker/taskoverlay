@@ -62,6 +62,16 @@ dotnet run --project tests\TaskOverlay.SmokeTests\TaskOverlay.SmokeTests.csproj
 powershell -ExecutionPolicy Bypass -File tests\cli-e2e.ps1
 ```
 
+## 项目管理
+
+项目管理上下文保存在 `docs/project/`，可作为 Nimbalyst、Codex 和 GitHub 的共同入口：
+
+- `docs/project/overview.md`：项目总览
+- `docs/project/roadmap.md`：阶段路线图
+- `docs/project/modules.md`：模块边界
+- `docs/project/active-sprint.md`：当前 Sprint
+- `docs/project/nimbalyst-map.md`：Nimbalyst 视觉管理示意图
+
 ## 本地 API 与 CLI
 
 应用默认在 `http://127.0.0.1:43127/` 启动本地 API。接口仅监听本机，并要求使用“设置”页中的访问令牌。可在设置页修改端口、复制令牌或关闭 API。
