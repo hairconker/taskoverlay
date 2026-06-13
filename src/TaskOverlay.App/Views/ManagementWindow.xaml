@@ -287,6 +287,7 @@
                             <DataGrid ItemsSource="{Binding Items}"
                                       AutoGenerateColumns="False"
                                       CanUserAddRows="False"
+                                      HorizontalScrollBarVisibility="Auto"
                                       IsReadOnly="True">
                                 <DataGrid.Columns>
                                     <DataGridCheckBoxColumn Binding="{Binding IsCompleted}" Header="完成" Width="54"/>
@@ -295,7 +296,7 @@
                                     <DataGridTextColumn Binding="{Binding DueAt, StringFormat={}{0:MM-dd HH:mm}}" Header="截止" Width="106"/>
                                     <DataGridTextColumn Binding="{Binding ScheduleSummary}" Header="重复" Width="82"/>
                                     <DataGridTextColumn Binding="{Binding TagSummary}" Header="标签" Width="110"/>
-                                    <DataGridTemplateColumn Header="操作" Width="184">
+                                    <DataGridTemplateColumn Header="操作" Width="230">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
@@ -329,10 +330,26 @@
                         </Grid>
 
                         <Border Grid.Column="1" Style="{StaticResource CardStyle}">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <StackPanel>
+                            <DockPanel LastChildFill="True">
+                                <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                                     <TextBlock Text="{Binding EditorHeading}" Style="{StaticResource SectionTitleStyle}"/>
-                                    <TextBlock Text="用于补充截止时间、提醒、标签和重复计划。" Style="{StaticResource HintStyle}" Margin="0,2,0,10"/>
+                                    <TextBlock Text="用于补充截止时间、提醒、标签和重复计划。" Style="{StaticResource HintStyle}" Margin="0,2,0,0"/>
+                                </StackPanel>
+
+                                <Border DockPanel.Dock="Bottom"
+                                        Background="White"
+                                        BorderBrush="{StaticResource CardBorderBrush}"
+                                        BorderThickness="0,1,0,0"
+                                        Padding="0,10,0,0"
+                                        Margin="0,10,0,0">
+                                    <WrapPanel>
+                                        <Button Content="保存任务" Style="{StaticResource PrimaryButtonStyle}" Click="SaveDetails_OnClick"/>
+                                        <Button Content="清空表单" Click="NewDetails_OnClick"/>
+                                    </WrapPanel>
+                                </Border>
+
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <StackPanel>
                                     <TextBlock Text="标题"/>
                                     <TextBox Text="{Binding EditorTitle, UpdateSourceTrigger=PropertyChanged}"/>
                                     <TextBlock Text="备注"/>
@@ -363,12 +380,9 @@
                                         </StackPanel>
                                     </Expander>
 
-                                    <WrapPanel Margin="0,12,0,0">
-                                        <Button Content="保存任务" Style="{StaticResource PrimaryButtonStyle}" Click="SaveDetails_OnClick"/>
-                                        <Button Content="清空表单" Click="NewDetails_OnClick"/>
-                                    </WrapPanel>
-                                </StackPanel>
-                            </ScrollViewer>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </DockPanel>
                         </Border>
                     </Grid>
                 </DockPanel>
