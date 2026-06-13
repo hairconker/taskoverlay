@@ -32,6 +32,7 @@ Thumbs.db
 Desktop.ini
 
 # Local artifacts and temporary files
+.tmp/
 artifacts/
 CONTEXT_CHECKPOINT.md
 DRIVE_ORGANIZATION_ANALYSIS.md
