@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "mcp__nimbalyst-settings__ai_set_preferred_language",
+      "mcp__nimbalyst-settings__settings_get_overview",
+      "mcp__nimbalyst-settings__ai_set_default_model",
+      "mcp__nimbalyst-settings__features_toggle"
     ],
     "deny": [],
     "ask": []
