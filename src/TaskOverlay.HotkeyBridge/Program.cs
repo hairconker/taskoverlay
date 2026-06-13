@@ -64,7 +64,11 @@ notifyIcon = new NotifyIcon
     Visible = true,
     ContextMenuStrip = BuildMenu()
 };
-notifyIcon.ShowBalloonTip(3000, "TaskOverlay Hotkey Bridge", $"正在监听：{hotkeyGesture}", ToolTipIcon.Info);
+notifyIcon.ShowBalloonTip(
+    5000,
+    "TaskOverlay Hotkey Bridge",
+    $"正在监听：{hotkeyGesture}。如果主程序管理员启动后已能识别快捷键，请退出桥接，避免同一快捷键触发两次。",
+    ToolTipIcon.Info);
 Application.Run();
 notifyIcon.Dispose();
 return 0;
@@ -73,6 +77,7 @@ ContextMenuStrip BuildMenu()
 {
     var menu = new ContextMenuStrip();
     menu.Items.Add($"快捷键：{hotkeyGesture}", null, (_, _) => { });
+    menu.Items.Add("提示：主程序管理员可用时请退出桥接", null, (_, _) => { });
     menu.Items.Add("测试切换编辑态", null, async (_, _) =>
     {
         try
