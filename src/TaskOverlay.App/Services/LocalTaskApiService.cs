@@ -151,7 +151,7 @@ public sealed class LocalTaskApiService(
             {
                 if (context.Request.HttpMethod == "POST" && segments[3] == "confirm")
                 {
-                    var task = await proposals.ConfirmAsync(proposalId, tasksProvider(), cancellationToken);
+                    var task = await proposals.ConfirmAsync(proposalId, tasksProvider(), goalsProvider(), cancellationToken);
                     object result = task is null ? new { error = "提案不存在。" } : task;
                     await WriteJsonAsync(context.Response, task is null ? HttpStatusCode.NotFound : HttpStatusCode.OK, result, cancellationToken);
                     return;

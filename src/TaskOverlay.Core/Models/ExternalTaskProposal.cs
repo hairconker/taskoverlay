@@ -10,6 +10,8 @@ public sealed class ExternalTaskProposal
     public DateTime? ReminderAt { get; set; }
     public bool IsDaily { get; set; }
     public RecurrenceRule? Recurrence { get; set; }
+    public long? GoalId { get; set; }
+    public string? GoalTitle { get; set; }
     public List<Tag> Tags { get; set; } = [];
     public string Source { get; set; } = "external";
     public DateTime CreatedAt { get; set; } = DateTime.Now;

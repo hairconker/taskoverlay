@@ -88,6 +88,7 @@ CLI 同时支持完整分组命令、短参数、自然时间、批量 ID、JSON
 ```powershell
 # 默认提交到提案箱
 TaskOverlay.Cli.exe proposal add "整理会议纪要" -p high -d "tomorrow 18:00" -g AI -s ai
+TaskOverlay.Cli.exe proposal add "推进目标拆分任务" --goal-id 1 --goal-title "提升 AI Agent 工程能力"
 
 # 直接创建正式任务
 TaskOverlay.Cli.exe task add "每周回顾" --repeat weekly --day 周五 --tags "工作,复盘"
@@ -152,7 +153,7 @@ Windows PowerShell 5 会处理原生命令参数中的双引号，因此复杂 J
 - `时间块模式`：按可用时间段安排任务，并在需要时保留父子层级拆分。
 - 新增建议可提交到“外部提案”；确认后才会变成正式任务。
 - 已有任务调整只作为建议展示，不会自动修改正式任务。
-- 从目标库生成的规划项会保留 `goalId` 和 `goalTitle`，进入提案箱时备注会显示关联目标，方便确认。
+- 从目标库生成的规划项会保留 `goalId` 和 `goalTitle`，进入提案箱时备注会显示关联目标，确认后会写入目标的任务链接。
 
 ## 长期目标库 V2
 

@@ -151,7 +151,7 @@ public partial class ManagementWindow : Window
     {
         if (((FrameworkElement)sender).DataContext is ExternalTaskProposal proposal)
         {
-            await _proposals.ConfirmAsync(proposal.Id, _tasks);
+            await _proposals.ConfirmAsync(proposal.Id, _tasks, _goals);
         }
     }
 
@@ -279,6 +279,8 @@ public partial class ManagementWindow : Window
                 DueAt = item.DueAt,
                 ReminderAt = item.ReminderAt,
                 Tags = item.Tags.Select(tag => new Tag { Name = tag.Name, Color = tag.Color }).ToList(),
+                GoalId = item.GoalId,
+                GoalTitle = item.GoalTitle,
                 Source = "planning"
             });
         }

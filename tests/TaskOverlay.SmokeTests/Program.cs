@@ -99,6 +99,8 @@ var proposed = await proposalStore.AddAsync(new ExternalTaskProposal
     Title = "AI 提案确认测试",
     Notes = "来自冒烟测试",
     Priority = TaskPriority.High,
+    GoalId = savedGoal.Id,
+    GoalTitle = savedGoal.Title,
     Tags = [new Tag { Name = "AI" }]
 });
 if ((await proposalStore.GetAllAsync()).Single().Id != proposed.Id)
@@ -106,12 +108,18 @@ if ((await proposalStore.GetAllAsync()).Single().Id != proposed.Id)
     throw new InvalidOperationException("External task proposal was not persisted.");
 }
 
-var confirmedProposal = await proposalStore.ConfirmAsync(proposed.Id, tasks);
+var confirmedProposal = await proposalStore.ConfirmAsync(proposed.Id, tasks, goals);
 if (confirmedProposal is null ||
     (await tasks.GetTasksAsync(TaskFilter.All)).All(t => t.Id != confirmedProposal.Id) ||
     (await proposalStore.GetAllAsync()).Count != 0)
 {
     throw new InvalidOperationException("Confirmed proposal was not converted into a task.");
+}
+var linkedGoal = await goals.GetGoalAsync(savedGoal.Id);
+if (linkedGoal is null ||
+    linkedGoal.TaskLinks.All(link => link.TaskId != confirmedProposal.Id || link.ProposalId != proposed.Id))
+{
+    throw new InvalidOperationException("Confirmed goal proposal was not linked back to the goal.");
 }
 
 var rejectedProposal = await proposalStore.AddAsync(new ExternalTaskProposal { Title = "AI 提案拒绝测试" });

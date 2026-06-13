@@ -217,6 +217,17 @@ try {
     $goals = @(Invoke-CliJson @("goal", "list", "--status", "active"))
     Assert-True (@($goals | Where-Object id -eq $goal.id).Count -eq 1) "goal list should include active goal"
 
+    $goalProposal = Invoke-CliJson @(
+        "proposal", "add", "goal-linked proposal",
+        "--goal-id", $goal.id,
+        "--goal-title", $goal.title,
+        "--source", "ai"
+    )
+    Assert-True ($goalProposal.goalId -eq $goal.id -and $goalProposal.goalTitle -eq $goal.title) "proposal add should preserve goal metadata"
+    $goalProposalTask = @(Invoke-CliJson @("proposal", "confirm", $goalProposal.id))[0]
+    $goalAfterLink = Invoke-CliJson @("goal", "show", $goal.id)
+    Assert-True (@($goalAfterLink.taskLinks | Where-Object { $_.taskId -eq $goalProposalTask.id -and $_.proposalId -eq $goalProposal.id }).Count -eq 1) "confirming a goal proposal should link the task back to the goal"
+
     $taskListPlan = Invoke-CliJson @("plan", "tomorrow", "--mode", "task-list", "--goal", "推进 TaskOverlay", "--max", "20")
     Assert-True ($taskListPlan.mode -eq "taskList") "plan tomorrow should support task-list mode"
     Assert-True ($taskListPlan.items.Count -gt 0) "task-list plan should include planning items"

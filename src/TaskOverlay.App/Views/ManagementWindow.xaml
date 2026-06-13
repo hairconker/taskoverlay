@@ -583,6 +583,7 @@
                                 <DataGridTextColumn Binding="{Binding DueAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Header="截止" Width="140"/>
                                 <DataGridTextColumn Binding="{Binding ScheduleSummary}" Header="重复" Width="90"/>
                                 <DataGridTextColumn Binding="{Binding TagSummary}" Header="标签" Width="120"/>
+                                <DataGridTextColumn Binding="{Binding GoalTitle}" Header="目标" Width="130"/>
                                 <DataGridTextColumn Binding="{Binding Source}" Header="来源" Width="110"/>
                                 <DataGridTextColumn Binding="{Binding CreatedAt, StringFormat={}{0:MM-dd HH:mm}}" Header="提交时间" Width="110"/>
                                 <DataGridTemplateColumn Header="操作" Width="170">

@@ -45,6 +45,7 @@ public sealed class ExternalTaskProposalStore
         proposal.Id = proposal.Id == Guid.Empty ? Guid.NewGuid() : proposal.Id;
         proposal.Title = proposal.Title.Trim();
         proposal.Notes = string.IsNullOrWhiteSpace(proposal.Notes) ? null : proposal.Notes.Trim();
+        proposal.GoalTitle = string.IsNullOrWhiteSpace(proposal.GoalTitle) ? null : proposal.GoalTitle.Trim();
         proposal.Source = string.IsNullOrWhiteSpace(proposal.Source) ? "external" : proposal.Source.Trim();
         proposal.Tags = TaskTagRules.Normalize(proposal.Tags);
         proposal.CreatedAt = proposal.CreatedAt == default ? DateTime.Now : proposal.CreatedAt;
@@ -65,9 +66,14 @@ public sealed class ExternalTaskProposalStore
         return proposal;
     }
 
-    public async Task<TaskItem?> ConfirmAsync(Guid id, TaskApplicationService tasks, CancellationToken cancellationToken = default)
+    public async Task<TaskItem?> ConfirmAsync(
+        Guid id,
+        TaskApplicationService tasks,
+        GoalApplicationService? goals = null,
+        CancellationToken cancellationToken = default)
     {
         ExternalTaskProposal? proposal;
+        TaskItem saved;
         await _gate.WaitAsync(cancellationToken);
         try
         {
@@ -78,7 +84,7 @@ public sealed class ExternalTaskProposalStore
                 return null;
             }
 
-            var saved = await tasks.SaveTaskAsync(new TaskItem
+            saved = await tasks.SaveTaskAsync(new TaskItem
             {
                 Title = proposal.Title,
                 Notes = proposal.Notes,
@@ -92,12 +98,23 @@ public sealed class ExternalTaskProposalStore
             proposals.Remove(proposal);
             await WriteAsync(proposals, cancellationToken);
             ProposalsChanged?.Invoke(this, EventArgs.Empty);
-            return saved;
         }
         finally
         {
             _gate.Release();
         }
+
+        if (proposal.GoalId is not null && goals is not null)
+        {
+            await goals.LinkTaskAsync(
+                proposal.GoalId.Value,
+                saved.Id,
+                proposal.Id,
+                $"由外部提案确认：{proposal.Title}",
+                cancellationToken);
+        }
+
+        return saved;
     }
 
     public async Task<bool> RejectAsync(Guid id, CancellationToken cancellationToken = default)

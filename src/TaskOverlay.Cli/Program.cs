@@ -253,6 +253,14 @@ static IReadOnlyList<ExternalTaskProposal> ReadProposalPayloads(CliArguments cli
 
     var task = new TaskItem();
     ApplyTaskOptions(task, cli, titleParts, requireTitle: true);
+    long? goalId = null;
+    if (cli.Get("goal-id") is { } goalIdText)
+    {
+        goalId = long.TryParse(goalIdText, out var parsedGoalId) && parsedGoalId > 0
+            ? parsedGoalId
+            : throw new ArgumentException("--goal-id 必须是正整数。");
+    }
+
     return
     [
         new ExternalTaskProposal
@@ -265,6 +273,8 @@ static IReadOnlyList<ExternalTaskProposal> ReadProposalPayloads(CliArguments cli
             IsDaily = task.IsDaily,
             Recurrence = task.Recurrence,
             Tags = task.Tags,
+            GoalId = goalId,
+            GoalTitle = cli.Get("goal-title"),
             Source = cli.Get("source") ?? "cli"
         }
     ];
@@ -772,7 +782,7 @@ static void PrintHelp()
 
           proposal list
           proposal show <ID>
-          proposal add <标题> [任务字段] [--source ai]
+          proposal add <标题> [任务字段] [--source ai] [--goal-id ID --goal-title 标题]
           proposal confirm|reject <ID...> [--all]   reject --all 需要 --yes
 
           goal list [--status active|paused|completed]
