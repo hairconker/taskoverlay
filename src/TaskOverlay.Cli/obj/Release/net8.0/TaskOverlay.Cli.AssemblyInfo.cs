@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TaskOverlay.Cli")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+98900822733a3eae2a121d55a57cefc790badb43")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+097652e73f68e593ea691fe37dff89d6a3c1830c")]
 [assembly: System.Reflection.AssemblyProductAttribute("TaskOverlay.Cli")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TaskOverlay.Cli")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

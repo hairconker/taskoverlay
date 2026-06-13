@@ -142,12 +142,32 @@ Windows PowerShell 5 会处理原生命令参数中的双引号，因此复杂 J
 - `DELETE /api/goals/{id}`
 - `POST /api/goals/{id}/links`
 - `DELETE /api/goals/{id}/links/{linkId}`
+- `POST /api/overlay/toggle-edit`
+- `POST /api/overlay/show`
+- `POST /api/overlay/hide`
 - `POST /api/tasks/{id}/complete`
 - `DELETE /api/tasks/{id}/delete`
 - `GET /api/plans/tomorrow?mode=taskList&windows=09:00-11:30`
 - `POST /api/plans/tomorrow`
 
 除健康检查外，请在请求中发送 `Authorization: Bearer <令牌>`。AI 工具可以直接调用这些接口，也可以执行 CLI；建议始终先提交提案，再由用户确认。
+
+## 游戏内快捷键桥接
+
+如果游戏内普通快捷键监听失效，可以先启动主程序，再以管理员身份运行桥接程序：
+
+```text
+src\TaskOverlay.HotkeyBridge\bin\Release\net8.0-windows\TaskOverlay.HotkeyBridge.exe
+```
+
+桥接程序会读取 `settings.json` 中的 API 端口、令牌和快捷键，监听到快捷键后调用 `POST /api/overlay/toggle-edit`。它只监听并触发，不吞掉按键。若主程序设置文件不在默认位置，可用：
+
+```powershell
+TaskOverlay.HotkeyBridge.exe --settings-dir "E:\work\to-dolist\src\TaskOverlay.App\bin\Release\net8.0-windows\data"
+TaskOverlay.HotkeyBridge.exe --hotkey "Ctrl+Shift+F12" --url "http://127.0.0.1:43127/" --token "<设置页令牌>"
+```
+
+如果游戏或反作弊系统主动屏蔽外部键盘监听，桥接程序也可能无法生效；不要尝试绕过反作弊规则。
 
 ## 明日规划 V1
 

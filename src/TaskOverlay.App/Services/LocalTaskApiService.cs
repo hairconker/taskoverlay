@@ -12,6 +12,7 @@ public sealed class LocalTaskApiService(
     Func<TaskApplicationService> tasksProvider,
     ExternalTaskProposalStore proposals,
     Func<GoalApplicationService> goalsProvider,
+    Action<string> overlayCommand,
     Func<AppSettings> settingsProvider) : IDisposable
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
@@ -83,6 +84,27 @@ public sealed class LocalTaskApiService(
             if (!IsAuthorized(context.Request))
             {
                 await WriteJsonAsync(context.Response, HttpStatusCode.Unauthorized, new { error = "缺少或无效的 API 令牌。" }, cancellationToken);
+                return;
+            }
+
+            if (context.Request.HttpMethod == "POST" && path == "/api/overlay/toggle-edit")
+            {
+                overlayCommand("toggle-edit");
+                await WriteJsonAsync(context.Response, HttpStatusCode.OK, new { overlay = "toggle-edit", accepted = true }, cancellationToken);
+                return;
+            }
+
+            if (context.Request.HttpMethod == "POST" && path == "/api/overlay/show")
+            {
+                overlayCommand("show");
+                await WriteJsonAsync(context.Response, HttpStatusCode.OK, new { overlay = "show", accepted = true }, cancellationToken);
+                return;
+            }
+
+            if (context.Request.HttpMethod == "POST" && path == "/api/overlay/hide")
+            {
+                overlayCommand("hide");
+                await WriteJsonAsync(context.Response, HttpStatusCode.OK, new { overlay = "hide", accepted = true }, cancellationToken);
                 return;
             }
 

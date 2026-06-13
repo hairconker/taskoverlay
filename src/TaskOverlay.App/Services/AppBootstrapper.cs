@@ -32,7 +32,7 @@ public sealed class AppBootstrapper : IDisposable
         _tasks = new TaskApplicationService(_repository);
         _proposals = new ExternalTaskProposalStore(Path.GetDirectoryName(_settingsStore.SettingsFilePath)!);
         _goals = new GoalApplicationService(new JsonGoalRepository(Path.GetDirectoryName(_settingsStore.SettingsFilePath)!));
-        _api = new LocalTaskApiService(() => _tasks, _proposals, () => _goals, () => _settingsStore.Current);
+        _api = new LocalTaskApiService(() => _tasks, _proposals, () => _goals, HandleOverlayCommand, () => _settingsStore.Current);
         _notifyIcon = BuildNotifyIcon();
     }
 
@@ -281,6 +281,35 @@ public sealed class AppBootstrapper : IDisposable
         {
             _overlayWindow.ShowOverlay();
             _overlayWindow.Activate();
+        }
+    }
+
+    private void HandleOverlayCommand(string command)
+    {
+        var dispatcher = System.Windows.Application.Current.Dispatcher;
+        if (!dispatcher.CheckAccess())
+        {
+            dispatcher.BeginInvoke(() => HandleOverlayCommand(command));
+            return;
+        }
+
+        if (_overlayWindow is null)
+        {
+            return;
+        }
+
+        switch (command)
+        {
+            case "toggle-edit":
+                _overlayWindow.ToggleEditMode();
+                break;
+            case "show":
+                _overlayWindow.ShowOverlay();
+                _overlayWindow.Activate();
+                break;
+            case "hide":
+                _overlayWindow.HideOverlay();
+                break;
         }
     }
 

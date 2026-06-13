@@ -90,6 +90,12 @@ try {
     }
     Assert-True ($health.ExitCode -eq 0) "status alias and settings auto-discovery should reach the API"
 
+    $overlayResponse = Invoke-RestMethod `
+        -Method Post `
+        -Uri "http://127.0.0.1:$port/api/overlay/toggle-edit" `
+        -Headers @{ Authorization = "Bearer $token" }
+    Assert-True ($overlayResponse.accepted -eq $true -and $overlayResponse.overlay -eq "toggle-edit") "overlay toggle API should accept authenticated requests"
+
     $shortConnection = Invoke-Cli @("health", "-u", "http://127.0.0.1:$port/", "-t", $token, "-o", "compact")
     Assert-True ($shortConnection.Text -match '"status":"ok"') "short connection and output options should work"
 
