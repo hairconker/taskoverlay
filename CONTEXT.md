@@ -41,7 +41,7 @@ The user's durable collection of long-term goals, priorities, and planning prefe
 _Avoid_: backlog, task archive
 
 **Local Planning Algorithm**:
-The deterministic planning logic that works without AI. It ranks goals and tasks, proposes tomorrow's plan, and provides a baseline that AI can refine instead of replacing.
+The deterministic planning logic that works without AI. It ranks goals and tasks, proposes a today or tomorrow schedule plan, and provides a baseline that AI can refine instead of replacing.
 _Avoid_: AI planner when no model is involved
 
 **User-Facing Planning Review**:

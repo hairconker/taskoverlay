@@ -7,15 +7,22 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
     public async Task<PlanningReview> BuildTomorrowPlanAsync(
         PlanningRequest request,
         CancellationToken cancellationToken = default)
+        => await BuildPlanAsync(request, cancellationToken);
+
+    public async Task<PlanningReview> BuildPlanAsync(
+        PlanningRequest request,
+        CancellationToken cancellationToken = default)
     {
         var targetDate = request.TargetDate == default
             ? DateOnly.FromDateTime(DateTime.Today.AddDays(1))
             : request.TargetDate;
         var targetStart = targetDate.ToDateTime(TimeOnly.MinValue);
         var targetDefaultDue = targetDate.ToDateTime(new TimeOnly(18, 0));
+        var todayDate = DateOnly.FromDateTime(DateTime.Today);
+        var targetLabel = BuildTargetLabel(targetDate, todayDate);
 
         var today = await tasks.GetTasksAsync(TaskFilter.Today, cancellationToken: cancellationToken);
-        var tomorrow = await tasks.GetTasksAsync(TaskFilter.Tomorrow, cancellationToken: cancellationToken);
+        var targetTasks = await tasks.GetTasksForDateAsync(targetDate, cancellationToken);
         var overdue = await tasks.GetTasksAsync(TaskFilter.Overdue, cancellationToken: cancellationToken);
         var all = await tasks.GetTasksAsync(TaskFilter.All, cancellationToken: cancellationToken);
         var activeGoals = goals is null
@@ -26,17 +33,18 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
         {
             Mode = request.Mode,
             TargetDate = targetDate,
-            Summary = BuildSummary(request, today.Count, tomorrow.Count, overdue.Count, 0)
+            Summary = BuildSummary(request, targetLabel, today.Count, targetTasks.Count, overdue.Count, 0)
         };
 
-        var selected = SelectCandidateTasks(today, tomorrow, overdue, Math.Max(request.MaxItems * 2, request.MaxItems));
+        var selected = SelectCandidateTasks(today, targetTasks, overdue, Math.Max(request.MaxItems * 2, request.MaxItems));
         var planningItems = new List<PlanningItem>();
-        planningItems.AddRange(BuildExistingTaskItems(selected, targetDefaultDue));
+        planningItems.AddRange(BuildExistingTaskItems(selected, targetDate, targetDefaultDue));
         var selectedTaskIds = selected.Select(task => task.Id).ToHashSet();
         planningItems.AddRange(BuildCarryOverProposalItems(
             today,
-            tomorrow,
+            targetTasks,
             selectedTaskIds,
+            targetLabel,
             targetDefaultDue,
             Math.Max(request.MaxItems, 1)));
         planningItems.AddRange(BuildGoalProposalItems(activeGoals, targetDefaultDue, Math.Max(request.MaxItems, 1)));
@@ -56,7 +64,7 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
             review.Items.Add(item);
         }
 
-        review.Summary = BuildSummary(request, today.Count, tomorrow.Count, overdue.Count, review.Items.Count);
+        review.Summary = BuildSummary(request, targetLabel, today.Count, targetTasks.Count, overdue.Count, review.Items.Count);
 
         if (request.Mode == PlanningMode.TimeBlock)
         {
@@ -78,10 +86,10 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
             review.Items.Add(new PlanningItem
             {
                 Kind = PlanningItemKind.ProposedTask,
-                Title = "规划明天的三个重点",
+                Title = $"规划{targetLabel}的三个重点",
                 Priority = TaskPriority.Normal,
                 DueAt = targetDefaultDue,
-                Reason = "当前没有可用任务，先建立明日重点。",
+                Reason = $"当前没有可用任务，先建立{targetLabel}重点。",
                 Tags = [new Tag { Name = "规划" }]
             });
         }
@@ -91,12 +99,12 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
 
     private static List<TaskItem> SelectCandidateTasks(
         IReadOnlyList<TaskItem> today,
-        IReadOnlyList<TaskItem> tomorrow,
+        IReadOnlyList<TaskItem> targetTasks,
         IReadOnlyList<TaskItem> overdue,
         int maxItems)
     {
         return overdue
-            .Concat(tomorrow)
+            .Concat(targetTasks)
             .Concat(today)
             .Where(task => !task.IsCompleted)
             .GroupBy(task => task.Id)
@@ -109,7 +117,7 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
             .ToList();
     }
 
-    private static IEnumerable<PlanningItem> BuildExistingTaskItems(IEnumerable<TaskItem> tasks, DateTime targetDefaultDue)
+    private static IEnumerable<PlanningItem> BuildExistingTaskItems(IEnumerable<TaskItem> tasks, DateOnly targetDate, DateTime targetDefaultDue)
     {
         foreach (var task in tasks)
         {
@@ -122,7 +130,7 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
                 Priority = task.Priority,
                 DueAt = task.DueAt ?? targetDefaultDue,
                 ReminderAt = task.ReminderAt,
-                Reason = BuildReason(task),
+                Reason = BuildReason(task, targetDate),
                 Tags = task.Tags.Select(tag => new Tag { Name = tag.Name, Color = tag.Color }).ToList()
             };
         }
@@ -130,8 +138,9 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
 
     private static IEnumerable<PlanningItem> BuildCarryOverProposalItems(
         IReadOnlyList<TaskItem> today,
-        IReadOnlyList<TaskItem> tomorrow,
+        IReadOnlyList<TaskItem> targetTasks,
         IReadOnlySet<long> selectedTaskIds,
+        string targetLabel,
         DateTime targetDefaultDue,
         int remainingSlots)
     {
@@ -140,10 +149,10 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
             yield break;
         }
 
-        var tomorrowIds = tomorrow.Select(task => task.Id).ToHashSet();
+        var targetTaskIds = targetTasks.Select(task => task.Id).ToHashSet();
         foreach (var task in today
                      .Where(task => !task.IsCompleted &&
-                                    !tomorrowIds.Contains(task.Id) &&
+                                    !targetTaskIds.Contains(task.Id) &&
                                     !selectedTaskIds.Contains(task.Id))
                      .Take(remainingSlots))
         {
@@ -151,11 +160,11 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
             {
                 Kind = PlanningItemKind.Adjustment,
                 TaskId = task.Id,
-                Title = $"建议明天继续：{task.Title}",
+                Title = $"建议{targetLabel}继续：{task.Title}",
                 Notes = task.Notes,
                 Priority = task.Priority,
                 DueAt = targetDefaultDue,
-                Reason = "今天仍未完成，建议明天继续安排；需确认后才修改原任务。",
+                Reason = $"今天仍未完成，建议{targetLabel}继续安排；需确认后才修改原任务。",
                 Tags = task.Tags.Select(tag => new Tag { Name = tag.Name, Color = tag.Color }).ToList()
             };
         }
@@ -281,6 +290,7 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
     {
         var normalized = source.ToLowerInvariant();
         if (normalized.Contains("明天", StringComparison.Ordinal) ||
+            normalized.Contains("今天", StringComparison.Ordinal) ||
             normalized.Contains("答应", StringComparison.Ordinal) ||
             normalized.Contains("交付", StringComparison.Ordinal) ||
             normalized.Contains("urgent", StringComparison.OrdinalIgnoreCase))
@@ -314,7 +324,7 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
         {
             return BuildChildren(parent,
             [
-                "限定明天只做一个可验证场景，写清输入、退出和失败条件",
+                "限定本次只做一个可验证场景，写清输入、退出和失败条件",
                 "搭建输入动作序列原型：移动、点击、按键和等待",
                 "加入人手化节奏：随机延迟、微小偏移和动作间隔",
                 "记录运行日志和截图，验证是否稳定复现",
@@ -340,16 +350,16 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
             })
             .ToList();
 
-    private static string BuildReason(TaskItem task)
+    private static string BuildReason(TaskItem task, DateOnly targetDate)
     {
         if (task.DueAt is not null && task.DueAt.Value < DateTime.Now)
         {
-            return "任务已过期，优先进入明日计划。";
+            return "任务已过期，优先进入本次计划。";
         }
 
-        if (task.DueAt is not null && DateOnly.FromDateTime(task.DueAt.Value) == DateOnly.FromDateTime(DateTime.Today.AddDays(1)))
+        if (task.DueAt is not null && DateOnly.FromDateTime(task.DueAt.Value) == targetDate)
         {
-            return "任务已安排在明天。";
+            return "任务已安排在目标日期。";
         }
 
         return task.Priority >= TaskPriority.High
@@ -359,13 +369,29 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
 
     private static string BuildSummary(
         PlanningRequest request,
+        string targetLabel,
         int todayCount,
-        int tomorrowCount,
+        int targetCount,
         int overdueCount,
         int selectedCount)
     {
         var mode = request.Mode == PlanningMode.TimeBlock ? "时间块模式" : "任务列表模式";
-        return $"{mode}：读取今天 {todayCount} 项、明天 {tomorrowCount} 项、过期 {overdueCount} 项，生成 {selectedCount} 项核心建议。";
+        return $"{mode}：读取今天 {todayCount} 项、{targetLabel} {targetCount} 项、过期 {overdueCount} 项，生成 {selectedCount} 项核心建议。";
+    }
+
+    private static string BuildTargetLabel(DateOnly targetDate, DateOnly today)
+    {
+        if (targetDate == today)
+        {
+            return "今天";
+        }
+
+        if (targetDate == today.AddDays(1))
+        {
+            return "明天";
+        }
+
+        return targetDate.ToString("yyyy-MM-dd");
     }
 
     private static int ScorePlanningItem(PlanningItem item)

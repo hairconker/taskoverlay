@@ -585,6 +585,22 @@ if (automationPlanningItem is null ||
     throw new InvalidOperationException("Game automation planning template did not produce concrete child steps.");
 }
 
+var todayPlan = await planning.BuildPlanAsync(new PlanningRequest
+{
+    Mode = PlanningMode.TimeBlock,
+    TargetDate = DateOnly.FromDateTime(DateTime.Today),
+    TimeWindows = [new PlanningTimeWindow { Start = new TimeOnly(9, 0), End = new TimeOnly(10, 0) }],
+    GoalSummary = "今天白天完成 CCD 效果图交付",
+    MaxItems = 4
+});
+if (todayPlan.TargetDate != DateOnly.FromDateTime(DateTime.Today) ||
+    todayPlan.Items.Count == 0 ||
+    todayPlan.Items[0].TimeBlock != "09:00-10:00" ||
+    !todayPlan.Summary.Contains("今天", StringComparison.Ordinal))
+{
+    throw new InvalidOperationException("Today planning did not target the current date.");
+}
+
 var timeBlockPlan = await planning.BuildTomorrowPlanAsync(new PlanningRequest
 {
     Mode = PlanningMode.TimeBlock,

@@ -9,7 +9,7 @@ TaskOverlay is a Windows desktop task overlay for lightweight task capture, loca
 - Local API: localhost-only integration surface with token checks.
 - CLI: script/agent/human control surface over the Local API.
 - Goal Library: durable long-term goals used by local planning.
-- Planning Assistant: local algorithm first; AI can refine suggestions but should not be required.
+- Planning Assistant: local today/tomorrow algorithm first; AI can refine suggestions but should not be required.
 
 ## Current Priorities
 
@@ -26,4 +26,3 @@ TaskOverlay is a Windows desktop task overlay for lightweight task capture, loca
 - JSON remains the default storage source of truth.
 - MySQL is optional and must not block startup.
 - Game-related input automation must stay framed as compliant testability/prototype work, not anti-cheat bypass.
-

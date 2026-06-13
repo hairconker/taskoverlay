@@ -24,7 +24,7 @@ Status: mostly complete.
 Status: in progress.
 
 - Goal Library.
-- Local tomorrow planning.
+- Local today/tomorrow planning.
 - Task List Mode and Time Block Mode.
 - Planning Item Hierarchy.
 - Task Decomposition Templates for common workflows.
@@ -52,4 +52,3 @@ Status: planned.
 - Local algorithm provides baseline planning to reduce token use.
 - AI refines, checks conflicts, and proposes better task decomposition.
 - User remains the final confirmer.
-

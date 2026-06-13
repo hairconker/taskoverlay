@@ -248,6 +248,10 @@ try {
     Assert-True (@($taskListPlan.items | Where-Object { $_.title -match "AI Agent" }).Count -gt 0) "task-list plan should include active goal suggestions"
     Assert-True (@($taskListPlan.items | Where-Object { $_.goalId -eq $goal.id -and $_.goalTitle -eq $goal.title }).Count -gt 0) "goal-derived plan items should include goal source"
 
+    $todayPlan = Invoke-CliJson @("plan", "today", "--mode", "time-block", "--window", "09:00-10:00", "--goal", "今天白天完成一个可验收任务")
+    Assert-True ($todayPlan.targetDate -eq (Get-Date).ToString("yyyy-MM-dd")) "plan today should target the current date"
+    Assert-True ($todayPlan.items[0].timeBlock -eq "09:00-10:00") "plan today should support requested time blocks"
+
     $timeBlockPlan = Invoke-CliJson @("plan", "tomorrow", "--mode", "time-block", "--window", "08:00-09:00")
     Assert-True ($timeBlockPlan.mode -eq "timeBlock") "plan tomorrow should support time-block mode"
     Assert-True ($timeBlockPlan.items[0].timeBlock -eq "08:00-09:00") "time-block plan should use requested windows"

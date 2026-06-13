@@ -158,11 +158,19 @@ static async Task<CommandResult> ExecuteGoalAsync(HttpClient client, string acti
 
 static async Task<CommandResult> ExecutePlanAsync(HttpClient client, string action, IReadOnlyList<string> arguments, CliArguments cli)
 {
+    var request = ReadPlanningRequest(cli, arguments);
     return action switch
     {
-        "" or "tomorrow" => await SendAsync(client, HttpMethod.Post, "api/plans/tomorrow", ReadPlanningRequest(cli, arguments)),
+        "" or "tomorrow" or "明天" => await SendAsync(client, HttpMethod.Post, "api/plans/tomorrow", WithTargetDate(request, DateOnly.FromDateTime(DateTime.Today.AddDays(1)))),
+        "today" or "今天" => await SendAsync(client, HttpMethod.Post, "api/plans/today", WithTargetDate(request, DateOnly.FromDateTime(DateTime.Today))),
         _ => throw new ArgumentException($"未知 plan 子命令：{action}")
     };
+}
+
+static PlanningRequest WithTargetDate(PlanningRequest request, DateOnly targetDate)
+{
+    request.TargetDate = targetDate;
+    return request;
 }
 
 static async Task<CommandResult> ExecuteForIdsAsync(
@@ -399,7 +407,9 @@ static PlanningRequest ReadPlanningRequest(CliArguments cli, IReadOnlyList<strin
             "time-block" or "timeblock" or "time" or "blocks" or "时间块" => PlanningMode.TimeBlock,
             _ => throw new ArgumentException("--mode 必须是 task-list 或 time-block。")
         },
-        TargetDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
+        TargetDate = cli.Get("date") is { } dateText
+            ? ParseDateOnly(dateText)
+            : DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
         MaxItems = cli.GetInt("max", cli.GetInt("max-items", 8)),
         GoalSummary = cli.Get("goal")
     };
@@ -806,7 +816,7 @@ static void PrintHelp()
           goal unlink <目标ID> --link-id <链接ID>
           goal delete <ID> --yes
 
-          plan tomorrow [--mode task-list|time-block] [--window 09:00-11:30] [--goal 文本]
+          plan today|tomorrow [--mode task-list|time-block] [--window 09:00-11:30] [--goal 文本] [--date 日期]
 
           health | config [--show-token]
 
@@ -821,7 +831,7 @@ static void PrintHelp()
           --file tasks.json     从文件读取对象或数组
           --stdin               从标准输入读取 JSON
           支持 --key value、--key=value、短参数 -u -t -o -q -y
-          plan 支持 --max、--window/--windows、--goal。
+          plan 支持 today/tomorrow、--date、--max、--window/--windows、--goal。
           Windows PowerShell 5 建议优先使用 --file/--stdin；内联 JSON 的双引号需要写成 \"。
 
         输出：

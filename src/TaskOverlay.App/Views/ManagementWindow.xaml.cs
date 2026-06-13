@@ -241,7 +241,7 @@ public partial class ManagementWindow : Window
         try
         {
             var planning = new LocalPlanningService(_tasks, _goals);
-            _lastPlanningReview = await planning.BuildTomorrowPlanAsync(request);
+            _lastPlanningReview = await planning.BuildPlanAsync(request);
             PlanningItems.Clear();
             PlanningWarnings.Clear();
             foreach (var item in _lastPlanningReview.Items)
@@ -257,7 +257,7 @@ public partial class ManagementWindow : Window
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show(this, $"生成明日计划失败：{ex.Message}", "明日规划", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(this, $"生成日程计划失败：{ex.Message}", "日程规划", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -265,7 +265,7 @@ public partial class ManagementWindow : Window
     {
         if (_lastPlanningReview is null)
         {
-            System.Windows.MessageBox.Show(this, "请先生成明日计划。", "明日规划", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show(this, "请先生成日程计划。", "日程规划", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -274,7 +274,7 @@ public partial class ManagementWindow : Window
             .ToList();
         if (proposedItems.Count == 0)
         {
-            System.Windows.MessageBox.Show(this, "当前计划没有需要新增到提案箱的任务。", "明日规划", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show(this, "当前计划没有需要新增到提案箱的任务。", "日程规划", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -295,7 +295,7 @@ public partial class ManagementWindow : Window
         }
 
         await LoadProposalsAsync();
-        System.Windows.MessageBox.Show(this, $"已加入 {proposedItems.Count} 条外部提案，请到“外部提案”页确认。", "明日规划", MessageBoxButton.OK, MessageBoxImage.Information);
+        System.Windows.MessageBox.Show(this, $"已加入 {proposedItems.Count} 条外部提案，请到“外部提案”页确认。", "日程规划", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void Proposals_OnProposalsChanged(object? sender, EventArgs e)
@@ -466,13 +466,15 @@ public partial class ManagementWindow : Window
         request = new PlanningRequest
         {
             Mode = PlanningModeBox.SelectedValue is PlanningMode selectedMode ? selectedMode : PlanningMode.TaskList,
-            TargetDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
+            TargetDate = PlanningTargetDateBox.SelectedValue?.ToString() == "tomorrow"
+                ? DateOnly.FromDateTime(DateTime.Today.AddDays(1))
+                : DateOnly.FromDateTime(DateTime.Today),
             GoalSummary = string.IsNullOrWhiteSpace(PlanningGoalBox.Text) ? null : PlanningGoalBox.Text.Trim()
         };
 
         if (!int.TryParse(PlanningMaxItemsBox.Text.Trim(), out var maxItems) || maxItems is < 1 or > 30)
         {
-            System.Windows.MessageBox.Show(this, "最多建议数量必须是 1 到 30 的整数。", "明日规划", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, "最多建议数量必须是 1 到 30 的整数。", "日程规划", MessageBoxButton.OK, MessageBoxImage.Warning);
             PlanningMaxItemsBox.Focus();
             return false;
         }
@@ -487,7 +489,7 @@ public partial class ManagementWindow : Window
                 !TimeOnly.TryParse(parts[1], out var end) ||
                 end <= start)
             {
-                System.Windows.MessageBox.Show(this, $"时间段格式无效：{window}\n示例：09:00-11:30", "明日规划", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(this, $"时间段格式无效：{window}\n示例：09:00-11:30", "日程规划", MessageBoxButton.OK, MessageBoxImage.Warning);
                 PlanningWindowsBox.Focus();
                 return false;
             }

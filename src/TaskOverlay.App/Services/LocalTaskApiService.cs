@@ -131,17 +131,20 @@ public sealed class LocalTaskApiService(
                 return;
             }
 
-            if (path == "/api/plans/tomorrow" &&
+            if (path is "/api/plans/today" or "/api/plans/tomorrow" &&
                 context.Request.HttpMethod is "GET" or "POST")
             {
                 var request = context.Request.HttpMethod == "POST"
                     ? await ReadJsonAsync<PlanningRequest>(context.Request, cancellationToken)
                     : BuildPlanningRequestFromQuery(context.Request);
-                request.TargetDate = request.TargetDate == default
-                    ? DateOnly.FromDateTime(DateTime.Today.AddDays(1))
-                    : request.TargetDate;
+                if (request.TargetDate == default)
+                {
+                    request.TargetDate = path == "/api/plans/today"
+                        ? DateOnly.FromDateTime(DateTime.Today)
+                        : DateOnly.FromDateTime(DateTime.Today.AddDays(1));
+                }
                 var planning = new LocalPlanningService(tasksProvider(), goalsProvider());
-                await WriteJsonAsync(context.Response, HttpStatusCode.OK, await planning.BuildTomorrowPlanAsync(request, cancellationToken), cancellationToken);
+                await WriteJsonAsync(context.Response, HttpStatusCode.OK, await planning.BuildPlanAsync(request, cancellationToken), cancellationToken);
                 return;
             }
 
@@ -355,7 +358,9 @@ public sealed class LocalTaskApiService(
         var planningRequest = new PlanningRequest
         {
             Mode = mode,
-            TargetDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1)),
+            TargetDate = DateOnly.TryParse(request.QueryString["date"], out var date)
+                ? date
+                : default,
             GoalSummary = request.QueryString["goal"]
         };
 

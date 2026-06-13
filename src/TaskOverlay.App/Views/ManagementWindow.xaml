@@ -405,7 +405,7 @@
                 </DockPanel>
             </TabItem>
 
-            <TabItem Header="明日规划">
+            <TabItem Header="日程规划">
                 <Grid Margin="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="360"/>
@@ -413,8 +413,13 @@
                     </Grid.ColumnDefinitions>
                     <Border Style="{StaticResource CardStyle}" Margin="0,0,12,0">
                         <StackPanel>
-                            <TextBlock Text="生成明日计划" Style="{StaticResource SectionTitleStyle}"/>
+                            <TextBlock Text="生成日程计划" Style="{StaticResource SectionTitleStyle}"/>
                             <TextBlock Text="V1 使用本地算法，不调用 AI。新增任务进入外部提案，已有任务调整只作为建议展示。" Style="{StaticResource HintStyle}" Margin="0,4,0,12"/>
+                            <TextBlock Text="规划日期"/>
+                            <ComboBox x:Name="PlanningTargetDateBox" SelectedIndex="0" SelectedValuePath="Tag">
+                                <ComboBoxItem Content="今天" Tag="today"/>
+                                <ComboBoxItem Content="明天" Tag="tomorrow"/>
+                            </ComboBox>
                             <TextBlock Text="规划模式"/>
                             <ComboBox x:Name="PlanningModeBox" SelectedIndex="0" SelectedValuePath="Tag">
                                 <ComboBoxItem Content="任务列表模式" Tag="{x:Static models:PlanningMode.TaskList}"/>
@@ -429,7 +434,7 @@
                             <TextBlock Text="最多建议数量"/>
                             <TextBox x:Name="PlanningMaxItemsBox" Text="8"/>
                             <WrapPanel Margin="0,10,0,0">
-                                <Button Content="生成明日计划" Style="{StaticResource PrimaryButtonStyle}" Click="GeneratePlan_OnClick"/>
+                                <Button Content="生成计划" Style="{StaticResource PrimaryButtonStyle}" Click="GeneratePlan_OnClick"/>
                                 <Button Content="新增建议进提案箱" Click="AddPlanProposals_OnClick"/>
                             </WrapPanel>
                         </StackPanel>
