@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TaskOverlay.SmokeTests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+097652e73f68e593ea691fe37dff89d6a3c1830c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a6d83c8747bdc345d7d87e0c76d15a1006d5d3a9")]
 [assembly: System.Reflection.AssemblyProductAttribute("TaskOverlay.SmokeTests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TaskOverlay.SmokeTests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
