@@ -1,0 +1,89 @@
+{
+  "nextGoalId": 3,
+  "nextMilestoneId": 3,
+  "nextTaskLinkId": 1,
+  "goals": [
+    {
+      "id": 1,
+      "title": "\u534A\u4E2A\u6708\u505A\u51FA\u6E38\u620F\u811A\u672C\u81EA\u52A8\u5316",
+      "description": "\u76EE\u6807\uFF1A\u5728\u534A\u4E2A\u6708\u5185\u505A\u51FA\u6E38\u620F\u811A\u672C\u81EA\u52A8\u5316\u539F\u578B\uFF0C\u91CD\u70B9\u662F\u7A33\u5B9A\u6A21\u62DF\u4EBA\u624B\u64CD\u63A7\u3001\u53EF\u6D4B\u8BD5\u3001\u53EF\u56DE\u9000\uFF1B\u4E0D\u505A\u53CD\u4F5C\u5F0A\u7ED5\u8FC7\u3002",
+      "priority": "high",
+      "status": "active",
+      "timeHorizon": "thisMonth",
+      "dailyBudgetMinutes": 120,
+      "tags": [
+        {
+          "id": 0,
+          "name": "\u81EA\u52A8\u5316",
+          "color": "#6B7280"
+        },
+        {
+          "id": 0,
+          "name": "\u6E38\u620F\u811A\u672C",
+          "color": "#6B7280"
+        },
+        {
+          "id": 0,
+          "name": "\u957F\u671F\u76EE\u6807",
+          "color": "#6B7280"
+        }
+      ],
+      "createdAt": "2026-06-14T02:38:54.0755749+08:00",
+      "updatedAt": "2026-06-14T02:38:54.0755226+08:00",
+      "milestones": [
+        {
+          "id": 1,
+          "goalId": 1,
+          "title": "\u5B8C\u6210\u53EF\u6F14\u793A\u7684\u4EBA\u624B\u64CD\u63A7\u6A21\u62DF\u539F\u578B",
+          "targetDate": "2026-06-29",
+          "status": "notStarted",
+          "createdAt": "2026-06-14T02:38:54.0758963+08:00",
+          "updatedAt": "2026-06-14T02:38:54.0759159+08:00"
+        }
+      ],
+      "taskLinks": [],
+      "tagSummary": "\u81EA\u52A8\u5316, \u6E38\u620F\u811A\u672C, \u957F\u671F\u76EE\u6807"
+    },
+    {
+      "id": 2,
+      "title": "\u660E\u5929\u7528 CCD \u62CD\u6548\u679C\u56FE\u68C0\u6D4B\u76F8\u673A\u6548\u679C",
+      "description": "\u660E\u5929\u7B54\u5E94\u540C\u5B66\uFF1A\u4F7F\u7528 CCD \u62CD\u4E00\u5F20\u6548\u679C\u56FE\uFF0C\u7528\u4E8E\u68C0\u6D4B\u76F8\u673A\u6548\u679C\uFF1B\u9700\u8981\u51C6\u5907\u8BBE\u5907\u3001\u62CD\u6444\u3001\u68C0\u67E5\u753B\u9762\u5E76\u4EA4\u4ED8\u7ED3\u679C\u3002",
+      "priority": "urgent",
+      "status": "active",
+      "timeHorizon": "thisWeek",
+      "dailyBudgetMinutes": 90,
+      "tags": [
+        {
+          "id": 0,
+          "name": "CCD",
+          "color": "#6B7280"
+        },
+        {
+          "id": 0,
+          "name": "\u76F8\u673A\u68C0\u6D4B",
+          "color": "#6B7280"
+        },
+        {
+          "id": 0,
+          "name": "\u77ED\u671F\u76EE\u6807",
+          "color": "#6B7280"
+        }
+      ],
+      "createdAt": "2026-06-14T02:38:54.3603328+08:00",
+      "updatedAt": "2026-06-14T02:38:54.3603317+08:00",
+      "milestones": [
+        {
+          "id": 2,
+          "goalId": 2,
+          "title": "\u5B8C\u6210 CCD \u6548\u679C\u56FE\u5E76\u7ED9\u540C\u5B66\u53CD\u9988",
+          "targetDate": "2026-06-15",
+          "status": "notStarted",
+          "createdAt": "2026-06-14T02:38:54.360334+08:00",
+          "updatedAt": "2026-06-14T02:38:54.3603342+08:00"
+        }
+      ],
+      "taskLinks": [],
+      "tagSummary": "CCD, \u76F8\u673A\u68C0\u6D4B, \u77ED\u671F\u76EE\u6807"
+    }
+  ]
+}

@@ -516,6 +516,40 @@ if ((await tasks.GetTasksAsync(TaskFilter.All)).Count != exportedCount)
 }
 
 var planning = new LocalPlanningService(tasks, goals);
+var ccdGoal = await goals.SaveGoalAsync(new Goal
+{
+    Title = "明天用 CCD 拍效果图检测相机效果",
+    Description = "使用 CCD 拍一张效果图，用于检测相机效果；需要准备设备、拍摄、检查画面并交付结果。",
+    Priority = TaskPriority.Urgent,
+    TimeHorizon = GoalTimeHorizon.ThisWeek,
+    DailyBudgetMinutes = 90,
+    Tags = [new Tag { Name = "CCD" }],
+    Milestones =
+    [
+        new GoalMilestone
+        {
+            Title = "完成 CCD 效果图并给同学反馈",
+            TargetDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1))
+        }
+    ]
+});
+var automationGoal = await goals.SaveGoalAsync(new Goal
+{
+    Title = "半个月做出游戏脚本自动化",
+    Description = "做出游戏脚本自动化原型，重点是稳定模拟人手操控、可测试、可回退。",
+    Priority = TaskPriority.High,
+    TimeHorizon = GoalTimeHorizon.ThisMonth,
+    DailyBudgetMinutes = 120,
+    Tags = [new Tag { Name = "自动化" }],
+    Milestones =
+    [
+        new GoalMilestone
+        {
+            Title = "完成可演示的人手操控模拟原型",
+            TargetDate = DateOnly.FromDateTime(DateTime.Today.AddDays(15))
+        }
+    ]
+});
 var taskListPlan = await planning.BuildTomorrowPlanAsync(new PlanningRequest
 {
     Mode = PlanningMode.TaskList,
@@ -534,6 +568,22 @@ if (goalPlanningItem.GoalId != savedGoal.Id || goalPlanningItem.GoalTitle != sav
 {
     throw new InvalidOperationException("Goal-derived planning item did not preserve its goal source.");
 }
+var ccdPlanningItem = taskListPlan.Items.FirstOrDefault(item => item.GoalId == ccdGoal.Id);
+if (ccdPlanningItem is null ||
+    !ccdPlanningItem.Title.Contains("CCD", StringComparison.OrdinalIgnoreCase) ||
+    ccdPlanningItem.Children.Count < 4 ||
+    ccdPlanningItem.Children.All(child => !child.Title.Contains("导出效果图", StringComparison.Ordinal)))
+{
+    throw new InvalidOperationException("CCD planning template did not produce concrete child steps.");
+}
+
+var automationPlanningItem = taskListPlan.Items.FirstOrDefault(item => item.GoalId == automationGoal.Id);
+if (automationPlanningItem is null ||
+    automationPlanningItem.Children.Count < 4 ||
+    automationPlanningItem.Children.All(child => !child.Title.Contains("人手化节奏", StringComparison.Ordinal)))
+{
+    throw new InvalidOperationException("Game automation planning template did not produce concrete child steps.");
+}
 
 var timeBlockPlan = await planning.BuildTomorrowPlanAsync(new PlanningRequest
 {
@@ -543,7 +593,8 @@ var timeBlockPlan = await planning.BuildTomorrowPlanAsync(new PlanningRequest
 });
 if (timeBlockPlan.Items.Count == 0 ||
     timeBlockPlan.Items[0].TimeBlock != "08:00-09:00" ||
-    timeBlockPlan.Items[0].Children.Count == 0)
+    timeBlockPlan.Items[0].Children.Count == 0 ||
+    timeBlockPlan.Items[0].Children.Any(child => string.IsNullOrWhiteSpace(child.TimeBlock)))
 {
     throw new InvalidOperationException("Time-block planning did not preserve hierarchy under the parent planning item.");
 }

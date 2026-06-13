@@ -1,0 +1,19 @@
+{
+  "hotkey": "~\u002B1",
+  "isTopmost": true,
+  "overlayOpacity": 0.5,
+  "overlayLeft": 1176.8,
+  "overlayTop": 76.80000000000001,
+  "overlayWidth": 355.20000000000005,
+  "overlayHeight": 307.20000000000005,
+  "startWithWindows": false,
+  "storageBackend": 0,
+  "mySqlHost": "localhost",
+  "mySqlPort": 3306,
+  "mySqlDatabase": "task_overlay",
+  "mySqlUser": "root",
+  "mySqlPassword": "",
+  "apiEnabled": true,
+  "apiPort": 43127,
+  "apiToken": "67bf5122fc8c530f87bec242256172d69d00c77bfe1b227e"
+}

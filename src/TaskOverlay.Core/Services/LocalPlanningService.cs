@@ -22,42 +22,41 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
             ? []
             : (await goals.GetGoalsAsync(GoalStatus.Active, cancellationToken)).ToList();
 
-        var selected = SelectCandidateTasks(today, tomorrow, overdue, request.MaxItems);
         var review = new PlanningReview
         {
             Mode = request.Mode,
             TargetDate = targetDate,
-            Summary = BuildSummary(request, today.Count, tomorrow.Count, overdue.Count, selected.Count)
+            Summary = BuildSummary(request, today.Count, tomorrow.Count, overdue.Count, 0)
         };
 
-        foreach (var item in BuildExistingTaskItems(selected, targetDefaultDue))
+        var selected = SelectCandidateTasks(today, tomorrow, overdue, Math.Max(request.MaxItems * 2, request.MaxItems));
+        var planningItems = new List<PlanningItem>();
+        planningItems.AddRange(BuildExistingTaskItems(selected, targetDefaultDue));
+        var selectedTaskIds = selected.Select(task => task.Id).ToHashSet();
+        planningItems.AddRange(BuildCarryOverProposalItems(
+            today,
+            tomorrow,
+            selectedTaskIds,
+            targetDefaultDue,
+            Math.Max(request.MaxItems, 1)));
+        planningItems.AddRange(BuildGoalProposalItems(activeGoals, targetDefaultDue, Math.Max(request.MaxItems, 1)));
+
+        if (!string.IsNullOrWhiteSpace(request.GoalSummary) &&
+            !HasEquivalentTemplate(planningItems, request.GoalSummary))
+        {
+            planningItems.Add(BuildGoalSummaryItem(request.GoalSummary, targetDefaultDue));
+        }
+
+        foreach (var item in planningItems
+                     .OrderByDescending(ScorePlanningItem)
+                     .ThenBy(item => item.DueAt ?? DateTime.MaxValue)
+                     .ThenBy(item => item.Title)
+                     .Take(Math.Max(1, request.MaxItems)))
         {
             review.Items.Add(item);
         }
 
-        foreach (var item in BuildCarryOverProposalItems(today, tomorrow, targetDefaultDue, request.MaxItems - review.Items.Count))
-        {
-            review.Items.Add(item);
-        }
-
-        foreach (var goalItem in BuildGoalProposalItems(activeGoals, targetDefaultDue, request.MaxItems - review.Items.Count))
-        {
-            review.Items.Add(goalItem);
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.GoalSummary) && review.Items.Count < request.MaxItems)
-        {
-            review.Items.Add(new PlanningItem
-            {
-                Kind = PlanningItemKind.ProposedTask,
-                Title = "推进长期目标",
-                Notes = request.GoalSummary.Trim(),
-                Priority = TaskPriority.High,
-                DueAt = targetDefaultDue,
-                Reason = "来自本次规划输入的目标摘要。",
-                Tags = [new Tag { Name = "目标" }, new Tag { Name = "规划" }]
-            });
-        }
+        review.Summary = BuildSummary(request, today.Count, tomorrow.Count, overdue.Count, review.Items.Count);
 
         if (request.Mode == PlanningMode.TimeBlock)
         {
@@ -132,6 +131,7 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
     private static IEnumerable<PlanningItem> BuildCarryOverProposalItems(
         IReadOnlyList<TaskItem> today,
         IReadOnlyList<TaskItem> tomorrow,
+        IReadOnlySet<long> selectedTaskIds,
         DateTime targetDefaultDue,
         int remainingSlots)
     {
@@ -141,7 +141,11 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
         }
 
         var tomorrowIds = tomorrow.Select(task => task.Id).ToHashSet();
-        foreach (var task in today.Where(task => !task.IsCompleted && !tomorrowIds.Contains(task.Id)).Take(remainingSlots))
+        foreach (var task in today
+                     .Where(task => !task.IsCompleted &&
+                                    !tomorrowIds.Contains(task.Id) &&
+                                    !selectedTaskIds.Contains(task.Id))
+                     .Take(remainingSlots))
         {
             yield return new PlanningItem
             {
@@ -177,9 +181,7 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
                 .Where(item => item.Status != MilestoneStatus.Completed)
                 .OrderBy(item => item.TargetDate ?? DateOnly.MaxValue)
                 .FirstOrDefault();
-            var title = milestone is null
-                ? $"推进目标：{goal.Title}"
-                : $"推进目标：{goal.Title} / {milestone.Title}";
+            var title = BuildGoalPlanningTitle(goal, milestone);
             var notes = new List<string>();
             if (!string.IsNullOrWhiteSpace(goal.Description))
             {
@@ -194,7 +196,7 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
                 notes.Add($"阶段目标日期：{milestone.TargetDate:yyyy-MM-dd}");
             }
 
-            yield return new PlanningItem
+            var item = new PlanningItem
             {
                 Kind = PlanningItemKind.ProposedTask,
                 GoalId = goal.Id,
@@ -206,8 +208,137 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
                 Reason = "来自进行中的长期目标库。",
                 Tags = goal.Tags.Select(tag => new Tag { Name = tag.Name, Color = tag.Color }).ToList()
             };
+            item.Children = BuildTemplateChildren(item, BuildTemplateSource(goal, milestone));
+            yield return item;
         }
     }
+
+    private static PlanningItem BuildGoalSummaryItem(string goalSummary, DateTime targetDefaultDue)
+    {
+        var item = new PlanningItem
+        {
+            Kind = PlanningItemKind.ProposedTask,
+            Title = BuildTemplateTitle(goalSummary) ?? "推进长期目标",
+            Notes = goalSummary.Trim(),
+            Priority = InferPriority(goalSummary),
+            DueAt = targetDefaultDue,
+            Reason = "来自本次规划输入的目标摘要。",
+            Tags = [new Tag { Name = "目标" }, new Tag { Name = "规划" }]
+        };
+        item.Children = BuildTemplateChildren(item, goalSummary);
+        return item;
+    }
+
+    private static string BuildGoalPlanningTitle(Goal goal, GoalMilestone? milestone)
+    {
+        var source = BuildTemplateSource(goal, milestone);
+        if (BuildTemplateTitle(source) is { } templateTitle)
+        {
+            return templateTitle;
+        }
+
+        return milestone is null
+            ? $"推进目标：{goal.Title}"
+            : $"推进目标：{goal.Title} / {milestone.Title}";
+    }
+
+    private static string BuildTemplateSource(Goal goal, GoalMilestone? milestone)
+        => string.Join(Environment.NewLine, new[]
+        {
+            goal.Title,
+            goal.Description,
+            milestone?.Title
+        }.Where(text => !string.IsNullOrWhiteSpace(text)));
+
+    private static string? BuildTemplateTitle(string source)
+    {
+        var normalized = source.ToLowerInvariant();
+        if (normalized.Contains("ccd", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("相机", StringComparison.Ordinal) ||
+            normalized.Contains("效果图", StringComparison.Ordinal))
+        {
+            return "完成 CCD 效果图拍摄与相机效果检查";
+        }
+
+        if ((normalized.Contains("游戏", StringComparison.Ordinal) && normalized.Contains("脚本", StringComparison.Ordinal)) ||
+            normalized.Contains("人手操控", StringComparison.Ordinal) ||
+            normalized.Contains("自动化", StringComparison.Ordinal))
+        {
+            return "推进游戏脚本自动化：定义并验证人手操控模拟 MVP";
+        }
+
+        return null;
+    }
+
+    private static bool HasEquivalentTemplate(IEnumerable<PlanningItem> existingItems, string source)
+    {
+        var title = BuildTemplateTitle(source);
+        return title is not null &&
+               existingItems.Any(item => string.Equals(item.Title, title, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static TaskPriority InferPriority(string source)
+    {
+        var normalized = source.ToLowerInvariant();
+        if (normalized.Contains("明天", StringComparison.Ordinal) ||
+            normalized.Contains("答应", StringComparison.Ordinal) ||
+            normalized.Contains("交付", StringComparison.Ordinal) ||
+            normalized.Contains("urgent", StringComparison.OrdinalIgnoreCase))
+        {
+            return TaskPriority.Urgent;
+        }
+
+        return TaskPriority.High;
+    }
+
+    private static List<PlanningItem> BuildTemplateChildren(PlanningItem parent, string source)
+    {
+        var normalized = source.ToLowerInvariant();
+        if (normalized.Contains("ccd", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Contains("相机", StringComparison.Ordinal) ||
+            normalized.Contains("效果图", StringComparison.Ordinal))
+        {
+            return BuildChildren(parent,
+            [
+                "确认同学要看的相机效果点和交付格式",
+                "准备 CCD、镜头、连接线、电源、存储和拍摄环境",
+                "拍摄样张并记录光线、距离、参数和异常",
+                "检查清晰度、噪点、色彩、暗角和坏点",
+                "导出效果图并把结论反馈给同学"
+            ], "CCD 拍摄检查模板。");
+        }
+
+        if ((normalized.Contains("游戏", StringComparison.Ordinal) && normalized.Contains("脚本", StringComparison.Ordinal)) ||
+            normalized.Contains("人手操控", StringComparison.Ordinal) ||
+            normalized.Contains("自动化", StringComparison.Ordinal))
+        {
+            return BuildChildren(parent,
+            [
+                "限定明天只做一个可验证场景，写清输入、退出和失败条件",
+                "搭建输入动作序列原型：移动、点击、按键和等待",
+                "加入人手化节奏：随机延迟、微小偏移和动作间隔",
+                "记录运行日志和截图，验证是否稳定复现",
+                "列出下一步：视觉识别、状态判断和安全停止"
+            ], "游戏脚本自动化模板；只做合规自用原型，不绕过反作弊。");
+        }
+
+        return [];
+    }
+
+    private static List<PlanningItem> BuildChildren(PlanningItem parent, IReadOnlyList<string> titles, string reason)
+        => titles
+            .Select(title => new PlanningItem
+            {
+                Kind = parent.Kind,
+                TaskId = parent.TaskId,
+                GoalId = parent.GoalId,
+                GoalTitle = parent.GoalTitle,
+                Title = title,
+                Priority = parent.Priority,
+                Reason = reason,
+                Tags = parent.Tags.Select(tag => new Tag { Name = tag.Name, Color = tag.Color }).ToList()
+            })
+            .ToList();
 
     private static string BuildReason(TaskItem task)
     {
@@ -235,6 +366,40 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
     {
         var mode = request.Mode == PlanningMode.TimeBlock ? "时间块模式" : "任务列表模式";
         return $"{mode}：读取今天 {todayCount} 项、明天 {tomorrowCount} 项、过期 {overdueCount} 项，生成 {selectedCount} 项核心建议。";
+    }
+
+    private static int ScorePlanningItem(PlanningItem item)
+    {
+        var score = item.Priority switch
+        {
+            TaskPriority.Urgent => 400,
+            TaskPriority.High => 300,
+            TaskPriority.Normal => 200,
+            TaskPriority.Low => 100,
+            _ => 0
+        };
+
+        if (item.GoalId is not null)
+        {
+            score += 80;
+        }
+
+        if (item.Kind == PlanningItemKind.ProposedTask)
+        {
+            score += 30;
+        }
+
+        if (item.Children.Count > 0)
+        {
+            score += 20;
+        }
+
+        if (item.DueAt is not null && item.DueAt.Value < DateTime.Now)
+        {
+            score -= Math.Min(80, Math.Max(0, (DateTime.Now.Date - item.DueAt.Value.Date).Days));
+        }
+
+        return score;
     }
 
     private static void ApplyTimeBlocks(PlanningReview review, IReadOnlyList<PlanningTimeWindow> windows, DateTime targetStart)
@@ -266,6 +431,11 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
             {
                 item.Children = SplitItem(item, window);
             }
+
+            if (item.Children.Count > 0)
+            {
+                ApplyChildTimeBlocks(item, window);
+            }
         }
     }
 
@@ -273,6 +443,26 @@ public sealed class LocalPlanningService(TaskApplicationService tasks, GoalAppli
         => window.DurationMinutes >= 50 &&
            item.Children.Count == 0 &&
            item.Title.Length >= 6;
+
+    private static void ApplyChildTimeBlocks(PlanningItem parent, PlanningTimeWindow window)
+    {
+        if (parent.Children.Count == 0)
+        {
+            return;
+        }
+
+        var slice = Math.Max(10, window.DurationMinutes / parent.Children.Count);
+        var current = window.Start;
+        for (var index = 0; index < parent.Children.Count; index++)
+        {
+            var child = parent.Children[index];
+            var end = index == parent.Children.Count - 1
+                ? window.End
+                : current.AddMinutes(slice);
+            child.TimeBlock = $"{current:HH\\:mm}-{end:HH\\:mm}";
+            current = end;
+        }
+    }
 
     private static List<PlanningItem> SplitItem(PlanningItem parent, PlanningTimeWindow window)
     {

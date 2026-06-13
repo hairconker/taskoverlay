@@ -1,0 +1,68 @@
+[
+  {
+    "id": "b52b8a83-381e-4ffa-8887-cfe23258a93f",
+    "title": "\u5B8C\u6210 CCD \u6548\u679C\u56FE\u62CD\u6444\u4E0E\u76F8\u673A\u6548\u679C\u68C0\u67E5",
+    "notes": "\u5EFA\u8BAE\u65F6\u95F4\uFF1A2026-06-15 09:00-11:00\n\u62C6\u5206\u6B65\u9AA4\uFF1A\n1. \u786E\u8BA4\u540C\u5B66\u8981\u770B\u7684\u76F8\u673A\u6548\u679C\u70B9\u548C\u4EA4\u4ED8\u683C\u5F0F\u3002\n2. \u51C6\u5907 CCD\u3001\u955C\u5934\u3001\u8FDE\u63A5\u7EBF\u3001\u7535\u6E90\u3001\u5B58\u50A8\u548C\u62CD\u6444\u73AF\u5883\u3002\n3. \u62CD\u6444\u6837\u5F20\u5E76\u8BB0\u5F55\u5149\u7EBF\u3001\u8DDD\u79BB\u3001\u53C2\u6570\u548C\u5F02\u5E38\u3002\n4. \u68C0\u67E5\u6E05\u6670\u5EA6\u3001\u566A\u70B9\u3001\u8272\u5F69\u3001\u6697\u89D2\u548C\u574F\u70B9\u3002\n5. \u5BFC\u51FA\u6548\u679C\u56FE\u5E76\u628A\u7ED3\u8BBA\u53CD\u9988\u7ED9\u540C\u5B66\u3002",
+    "priority": 3,
+    "dueAt": "2026-06-15T11:00:00",
+    "reminderAt": null,
+    "isDaily": false,
+    "recurrence": null,
+    "goalId": 2,
+    "goalTitle": "\u660E\u5929\u7528 CCD \u62CD\u6548\u679C\u56FE\u68C0\u6D4B\u76F8\u673A\u6548\u679C",
+    "tags": [
+      {
+        "id": 0,
+        "name": "CCD",
+        "color": "#6B7280"
+      },
+      {
+        "id": 0,
+        "name": "\u76F8\u673A\u68C0\u6D4B",
+        "color": "#6B7280"
+      },
+      {
+        "id": 0,
+        "name": "\u660E\u65E5\u8BA1\u5212",
+        "color": "#6B7280"
+      }
+    ],
+    "source": "ai",
+    "createdAt": "2026-06-14T02:44:02.5778395+08:00",
+    "tagSummary": "CCD, \u76F8\u673A\u68C0\u6D4B, \u660E\u65E5\u8BA1\u5212",
+    "scheduleSummary": ""
+  },
+  {
+    "id": "6fc40cb7-5367-4702-a085-424bb0a700ae",
+    "title": "\u63A8\u8FDB\u6E38\u620F\u811A\u672C\u81EA\u52A8\u5316\uFF1A\u5B9A\u4E49\u5E76\u9A8C\u8BC1\u4EBA\u624B\u64CD\u63A7\u6A21\u62DF MVP",
+    "notes": "\u5EFA\u8BAE\u65F6\u95F4\uFF1A2026-06-15 14:00-16:00\n\u62C6\u5206\u6B65\u9AA4\uFF1A\n1. \u9650\u5B9A\u660E\u5929\u53EA\u505A\u4E00\u4E2A\u53EF\u9A8C\u8BC1\u573A\u666F\uFF0C\u5199\u6E05\u8F93\u5165\u3001\u9000\u51FA\u548C\u5931\u8D25\u6761\u4EF6\u3002\n2. \u642D\u5EFA\u8F93\u5165\u52A8\u4F5C\u5E8F\u5217\u539F\u578B\uFF1A\u79FB\u52A8\u3001\u70B9\u51FB\u3001\u6309\u952E\u548C\u7B49\u5F85\u3002\n3. \u52A0\u5165\u4EBA\u624B\u5316\u8282\u594F\uFF1A\u968F\u673A\u5EF6\u8FDF\u3001\u5FAE\u5C0F\u504F\u79FB\u548C\u52A8\u4F5C\u95F4\u9694\u3002\n4. \u8BB0\u5F55\u8FD0\u884C\u65E5\u5FD7\u548C\u622A\u56FE\uFF0C\u9A8C\u8BC1\u662F\u5426\u7A33\u5B9A\u590D\u73B0\u3002\n5. \u5217\u51FA\u4E0B\u4E00\u6B65\uFF1A\u89C6\u89C9\u8BC6\u522B\u3001\u72B6\u6001\u5224\u65AD\u548C\u5B89\u5168\u505C\u6B62\u3002\n\u8FB9\u754C\uFF1A\u53EA\u505A\u5408\u89C4\u81EA\u7528\u539F\u578B\uFF0C\u4E0D\u505A\u53CD\u4F5C\u5F0A\u7ED5\u8FC7\u3002",
+    "priority": 2,
+    "dueAt": "2026-06-15T16:00:00",
+    "reminderAt": null,
+    "isDaily": false,
+    "recurrence": null,
+    "goalId": 1,
+    "goalTitle": "\u534A\u4E2A\u6708\u505A\u51FA\u6E38\u620F\u811A\u672C\u81EA\u52A8\u5316",
+    "tags": [
+      {
+        "id": 0,
+        "name": "\u81EA\u52A8\u5316",
+        "color": "#6B7280"
+      },
+      {
+        "id": 0,
+        "name": "\u6E38\u620F\u811A\u672C",
+        "color": "#6B7280"
+      },
+      {
+        "id": 0,
+        "name": "\u660E\u65E5\u8BA1\u5212",
+        "color": "#6B7280"
+      }
+    ],
+    "source": "ai",
+    "createdAt": "2026-06-14T02:44:02.8216712+08:00",
+    "tagSummary": "\u81EA\u52A8\u5316, \u6E38\u620F\u811A\u672C, \u660E\u65E5\u8BA1\u5212",
+    "scheduleSummary": ""
+  }
+]

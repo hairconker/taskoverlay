@@ -56,6 +56,10 @@ _Avoid_: fixed schedule when the user has not selected time blocks
 The parent-child structure inside a planning result. When the assistant splits a broad task or time block into smaller items, the child items stay grouped under the original parent item.
 _Avoid_: flat split tasks when the parent context matters
 
+**Task Decomposition Template**:
+A reusable planning pattern for common task types. It turns a broad goal into concrete child planning items with preparation, execution, verification, and delivery steps while preserving Planning Item Hierarchy.
+_Avoid_: vague prepare/execute splits when a known task type has a better template
+
 **Local API**:
 The localhost-only HTTP API exposed by the desktop app. It requires the configured API token except for health checks.
 _Avoid_: public API, cloud API
@@ -84,6 +88,7 @@ _Avoid_: source file
 - A **User-Facing Planning Review** is shown in Chinese before implementation or plan application.
 - Each planning run has a user-selected **Planning Mode**: Task List Mode or Time Block Mode.
 - Split planning suggestions preserve **Planning Item Hierarchy** so child items remain under the broad parent task or time block.
+- A **Task Decomposition Template** should be used before generic splitting when the task type is recognizable, such as CCD shooting/checking or automation prototype work.
 - The **CLI** talks to the **Local API**; it does not modify task files directly.
 - The **Overlay** is optimized for quick use; the **Task Center** owns detailed management.
 - **Task Data** must remain portable enough to survive reinstall or relocation.
