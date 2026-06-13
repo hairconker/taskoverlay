@@ -190,7 +190,8 @@ public partial class OverlayWindow : Window, IOverlayWindowController, INotifyPr
     private static IHotkeyService CreateHotkeyService(IntPtr hwnd, string gesture)
     {
         return gesture.Equals("~+1", StringComparison.OrdinalIgnoreCase) ||
-               gesture.Equals("`+1", StringComparison.OrdinalIgnoreCase)
+               gesture.Equals("`+1", StringComparison.OrdinalIgnoreCase) ||
+               KeyboardChordHotkeyService.UsesOem3Key(gesture)
             ? new KeyboardChordHotkeyService()
             : new Win32HotkeyService(hwnd);
     }
@@ -294,7 +295,22 @@ public partial class OverlayWindow : Window, IOverlayWindowController, INotifyPr
         if (!service.Register(gesture))
         {
             service.Dispose();
-            return false;
+            if (service is KeyboardChordHotkeyService || !KeyboardChordHotkeyService.CanParse(gesture))
+            {
+                return false;
+            }
+
+            var fallbackService = new KeyboardChordHotkeyService();
+            fallbackService.HotkeyPressed += HotkeyService_OnHotkeyPressed;
+            if (!fallbackService.Register(gesture))
+            {
+                fallbackService.Dispose();
+                return false;
+            }
+
+            _hotkeyService = fallbackService;
+            _registeredHotkeyGesture = gesture;
+            return true;
         }
 
         _hotkeyService = service;

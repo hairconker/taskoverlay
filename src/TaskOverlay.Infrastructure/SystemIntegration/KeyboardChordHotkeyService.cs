@@ -6,13 +6,26 @@ namespace TaskOverlay.Infrastructure.SystemIntegration;
 public sealed class KeyboardChordHotkeyService : IHotkeyService
 {
     private const int VkOem3 = 0xC0;
-    private const int Vk1 = 0x31;
+    private const int VkControl = 0x11;
+    private const int VkShift = 0x10;
+    private const int VkMenu = 0x12;
+    private const int VkLWin = 0x5B;
+    private const int VkRWin = 0x5C;
+    private const int VkLControl = 0xA2;
+    private const int VkRControl = 0xA3;
+    private const int VkLShift = 0xA0;
+    private const int VkRShift = 0xA1;
+    private const int VkLMenu = 0xA4;
+    private const int VkRMenu = 0xA5;
     private readonly HashSet<int> _pressedKeys = [];
     private readonly Win32Native.LowLevelKeyboardProc _callback;
+    private readonly HashSet<int> _requiredKeys = [];
     private IntPtr _hook;
     private bool _firedForCurrentChord;
-    private int _firstKey;
-    private int _secondKey;
+    private bool _requiresControl;
+    private bool _requiresShift;
+    private bool _requiresAlt;
+    private bool _requiresWin;
 
     public KeyboardChordHotkeyService()
     {
@@ -24,7 +37,7 @@ public sealed class KeyboardChordHotkeyService : IHotkeyService
     public bool Register(string gesture)
     {
         Unregister();
-        if (!TryParseGesture(gesture, out _firstKey, out _secondKey))
+        if (!TryParseGesture(gesture))
         {
             return false;
         }
@@ -56,7 +69,7 @@ public sealed class KeyboardChordHotkeyService : IHotkeyService
             if (message is Win32Native.WmKeyDown or Win32Native.WmSysKeyDown)
             {
                 _pressedKeys.Add(vkCode);
-                if (!_firedForCurrentChord && _pressedKeys.Contains(_firstKey) && _pressedKeys.Contains(_secondKey))
+                if (!_firedForCurrentChord && IsChordPressed())
                 {
                     _firedForCurrentChord = true;
                     HotkeyPressed?.Invoke(this, EventArgs.Empty);
@@ -66,7 +79,7 @@ public sealed class KeyboardChordHotkeyService : IHotkeyService
             else if (message is Win32Native.WmKeyUp or Win32Native.WmSysKeyUp)
             {
                 _pressedKeys.Remove(vkCode);
-                if (!_pressedKeys.Contains(_firstKey) || !_pressedKeys.Contains(_secondKey))
+                if (!IsChordPressed())
                 {
                     _firedForCurrentChord = false;
                 }
@@ -76,29 +89,101 @@ public sealed class KeyboardChordHotkeyService : IHotkeyService
         return Win32Native.CallNextHookEx(_hook, nCode, wParam, lParam);
     }
 
-    private static bool TryParseGesture(string gesture, out int firstKey, out int secondKey)
+    private bool TryParseGesture(string gesture)
     {
-        firstKey = 0;
-        secondKey = 0;
+        _requiredKeys.Clear();
+        _requiresControl = false;
+        _requiresShift = false;
+        _requiresAlt = false;
+        _requiresWin = false;
 
         var parts = gesture.Split('+', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length != 2)
+        if (parts.Length < 2)
         {
             return false;
         }
 
-        firstKey = ParseKey(parts[0]);
-        secondKey = ParseKey(parts[1]);
-        return firstKey != 0 && secondKey != 0;
+        foreach (var part in parts)
+        {
+            switch (part.ToUpperInvariant())
+            {
+                case "CTRL":
+                case "CONTROL":
+                    _requiresControl = true;
+                    break;
+                case "SHIFT":
+                    _requiresShift = true;
+                    break;
+                case "ALT":
+                    _requiresAlt = true;
+                    break;
+                case "WIN":
+                case "WINDOWS":
+                    _requiresWin = true;
+                    break;
+                default:
+                    var key = ParseKey(part);
+                    if (key == 0)
+                    {
+                        return false;
+                    }
+                    _requiredKeys.Add(key);
+                    break;
+            }
+        }
+
+        return _requiredKeys.Count > 0;
     }
 
     private static int ParseKey(string value)
     {
-        return value.ToUpperInvariant() switch
+        var normalized = value.ToUpperInvariant();
+        if (normalized is "~" or "`" or "OEM3" or "·")
         {
-            "~" or "`" or "OEM3" or "·" => VkOem3,
-            "1" => Vk1,
-            _ => 0
-        };
+            return VkOem3;
+        }
+
+        if (normalized.Length == 1 && char.IsLetterOrDigit(normalized[0]))
+        {
+            return char.ToUpperInvariant(normalized[0]);
+        }
+
+        if (normalized.StartsWith('F') &&
+            int.TryParse(normalized[1..], out var functionKey) &&
+            functionKey is >= 1 and <= 24)
+        {
+            return 0x70 + functionKey - 1;
+        }
+
+        return 0;
+    }
+
+    private bool IsChordPressed()
+    {
+        return (!_requiresControl || IsAnyPressed(VkControl, VkLControl, VkRControl)) &&
+               (!_requiresShift || IsAnyPressed(VkShift, VkLShift, VkRShift)) &&
+               (!_requiresAlt || IsAnyPressed(VkMenu, VkLMenu, VkRMenu)) &&
+               (!_requiresWin || IsAnyPressed(VkLWin, VkRWin)) &&
+               _requiredKeys.All(key => _pressedKeys.Contains(key));
+    }
+
+    private bool IsAnyPressed(params int[] keys)
+        => keys.Any(_pressedKeys.Contains);
+
+    public static bool CanParse(string gesture)
+    {
+        var parts = gesture.Split('+', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 2)
+        {
+            return false;
+        }
+
+        return parts.Any(part => ParseKey(part) != 0);
+    }
+
+    public static bool UsesOem3Key(string gesture)
+    {
+        return gesture.Split('+', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Any(part => ParseKey(part) == VkOem3);
     }
 }
