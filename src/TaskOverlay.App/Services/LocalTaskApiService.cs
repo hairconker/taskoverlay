@@ -226,6 +226,41 @@ public sealed class LocalTaskApiService(
                 return;
             }
 
+            if (segments.Length == 4 &&
+                segments[0] == "api" &&
+                segments[1] == "goals" &&
+                long.TryParse(segments[2], out var linkGoalId) &&
+                segments[3] == "links" &&
+                context.Request.HttpMethod == "POST")
+            {
+                var request = await ReadJsonAsync<GoalTaskLinkRequest>(context.Request, cancellationToken);
+                var taskExists = (await tasksProvider().GetTasksAsync(TaskFilter.All, cancellationToken: cancellationToken))
+                    .Any(item => item.Id == request.TaskId);
+                if (!taskExists)
+                {
+                    await WriteJsonAsync(context.Response, HttpStatusCode.NotFound, new { error = "任务不存在。" }, cancellationToken);
+                    return;
+                }
+
+                var goal = await goalsProvider().LinkTaskAsync(linkGoalId, request.TaskId, note: request.Note, cancellationToken: cancellationToken);
+                object result = goal is null ? new { error = "目标不存在。" } : goal;
+                await WriteJsonAsync(context.Response, goal is null ? HttpStatusCode.NotFound : HttpStatusCode.OK, result, cancellationToken);
+                return;
+            }
+
+            if (segments.Length == 5 &&
+                segments[0] == "api" &&
+                segments[1] == "goals" &&
+                long.TryParse(segments[2], out var unlinkGoalId) &&
+                segments[3] == "links" &&
+                long.TryParse(segments[4], out var linkId) &&
+                context.Request.HttpMethod == "DELETE")
+            {
+                var removed = await goalsProvider().UnlinkTaskAsync(unlinkGoalId, linkId, cancellationToken);
+                await WriteJsonAsync(context.Response, removed ? HttpStatusCode.OK : HttpStatusCode.NotFound, new { goalId = unlinkGoalId, linkId, removed }, cancellationToken);
+                return;
+            }
+
             if (segments.Length == 3 && segments[0] == "api" && segments[1] == "goals" && long.TryParse(segments[2], out var goalId))
             {
                 if (context.Request.HttpMethod == "GET")
@@ -334,5 +369,11 @@ public sealed class LocalTaskApiService(
     private sealed class CompletionRequest
     {
         public bool Completed { get; set; } = true;
+    }
+
+    private sealed class GoalTaskLinkRequest
+    {
+        public long TaskId { get; set; }
+        public string? Note { get; set; }
     }
 }

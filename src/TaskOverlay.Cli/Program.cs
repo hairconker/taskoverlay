@@ -140,6 +140,14 @@ static async Task<CommandResult> ExecuteGoalAsync(HttpClient client, string acti
                        ?? throw new InvalidDataException("无法读取目标详情。");
             ApplyGoalOptions(goal, cli, arguments.Skip(1).ToList(), requireTitle: false);
             return await SendAsync(client, HttpMethod.Put, $"api/goals/{goalId}", goal);
+        case "link":
+            var linkGoalId = RequireSingleId(arguments);
+            var taskId = ReadPositiveLong(cli.Get("task-id") ?? cli.Get("task") ?? arguments.Skip(1).FirstOrDefault(), "任务 ID");
+            return await SendAsync(client, HttpMethod.Post, $"api/goals/{linkGoalId}/links", new { taskId, note = cli.Get("note") });
+        case "unlink":
+            var unlinkGoalId = RequireSingleId(arguments);
+            var linkId = ReadPositiveLong(cli.Get("link-id") ?? cli.Get("link") ?? arguments.Skip(1).FirstOrDefault(), "链接 ID");
+            return await SendAsync(client, HttpMethod.Delete, $"api/goals/{unlinkGoalId}/links/{linkId}");
         case "delete":
             RequireConfirmation(cli, "删除目标");
             return await SendAsync(client, HttpMethod.Delete, $"api/goals/{RequireSingleId(arguments)}");
@@ -748,6 +756,11 @@ static IEnumerable<string> SplitValues(string value)
 static string RequireSingleId(IReadOnlyList<string> arguments)
     => arguments.Count > 0 ? arguments[0] : throw new ArgumentException("该命令需要 ID。");
 
+static long ReadPositiveLong(string? value, string name)
+    => long.TryParse(value, out var parsed) && parsed > 0
+        ? parsed
+        : throw new ArgumentException($"{name}必须是正整数。");
+
 static void RequireConfirmation(CliArguments cli, string operation)
 {
     if (!cli.Has("yes"))
@@ -789,6 +802,8 @@ static void PrintHelp()
           goal show <ID>
           goal add <标题> [--description 文本] [--priority high] [--horizon long-term|this-month|this-week] [--daily-minutes 90] [--milestone 标题 --target 日期]
           goal update <ID> [目标字段]
+          goal link <目标ID> --task-id <任务ID> [--note 文本]
+          goal unlink <目标ID> --link-id <链接ID>
           goal delete <ID> --yes
 
           plan tomorrow [--mode task-list|time-block] [--window 09:00-11:30] [--goal 文本]

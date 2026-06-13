@@ -111,6 +111,8 @@ Get-Content tasks.json -Raw | TaskOverlay.Cli.exe task add --stdin
 # 长期目标库
 TaskOverlay.Cli.exe goal add "提升 AI Agent 工程能力" --priority high --horizon long-term --daily-minutes 90 --tags "AI,学习" --milestone "完成 TaskOverlay 规划助手" --target "2026-06-20"
 TaskOverlay.Cli.exe goal list --status active
+TaskOverlay.Cli.exe goal link 1 --task-id 12 --note "关联已有任务"
+TaskOverlay.Cli.exe goal unlink 1 --link-id 3
 
 # 本地明日规划，不调用 AI
 TaskOverlay.Cli.exe plan tomorrow --mode task-list --goal "推进 TaskOverlay"
@@ -138,6 +140,8 @@ Windows PowerShell 5 会处理原生命令参数中的双引号，因此复杂 J
 - `POST /api/goals`
 - `PUT /api/goals/{id}`
 - `DELETE /api/goals/{id}`
+- `POST /api/goals/{id}/links`
+- `DELETE /api/goals/{id}/links/{linkId}`
 - `POST /api/tasks/{id}/complete`
 - `DELETE /api/tasks/{id}/delete`
 - `GET /api/plans/tomorrow?mode=taskList&windows=09:00-11:30`
@@ -163,7 +167,7 @@ Windows PowerShell 5 会处理原生命令参数中的双引号，因此复杂 J
 - `Milestone`：阶段目标，包含目标日期和状态。
 - `Task Link`：预留的任务关联结构，后续用于把正式任务或提案关联到目标。
 
-目标可以通过 Task Center 的“目标库”页、CLI `goal` 命令或本地 API 管理。本地规划算法会读取 `active` 目标，把高优先级目标和最近阶段目标转换成明日建议。
+目标可以通过 Task Center 的“目标库”页、CLI `goal` 命令或本地 API 管理。本地规划算法会读取 `active` 目标，把高优先级目标和最近阶段目标转换成明日建议。已有正式任务可以通过 `goal link` 或目标链接 API 关联到目标；解除链接不会删除正式任务。
 
 Release 可执行文件：
 

@@ -121,6 +121,18 @@ if (linkedGoal is null ||
 {
     throw new InvalidOperationException("Confirmed goal proposal was not linked back to the goal.");
 }
+var existingLinkId = linkedGoal.TaskLinks.First(link => link.TaskId == confirmedProposal.Id).Id;
+if (!await goals.UnlinkTaskAsync(savedGoal.Id, existingLinkId) ||
+    (await goals.GetGoalAsync(savedGoal.Id))?.TaskLinks.Any(link => link.Id == existingLinkId) == true)
+{
+    throw new InvalidOperationException("Goal task link was not removed.");
+}
+var manuallyLinkedGoal = await goals.LinkTaskAsync(savedGoal.Id, confirmedProposal.Id, note: "manual smoke link");
+if (manuallyLinkedGoal is null ||
+    manuallyLinkedGoal.TaskLinks.All(link => link.TaskId != confirmedProposal.Id || link.Note != "manual smoke link"))
+{
+    throw new InvalidOperationException("Manual goal task link was not created.");
+}
 
 var rejectedProposal = await proposalStore.AddAsync(new ExternalTaskProposal { Title = "AI 提案拒绝测试" });
 if (!await proposalStore.RejectAsync(rejectedProposal.Id) || (await proposalStore.GetAllAsync()).Count != 0)

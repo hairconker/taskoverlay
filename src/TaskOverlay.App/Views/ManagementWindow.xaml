@@ -522,6 +522,7 @@
                                         <DataGridTextColumn Binding="{Binding DailyBudgetMinutes}" Header="每日分钟" Width="90"/>
                                         <DataGridTextColumn Binding="{Binding TagSummary}" Header="标签" Width="140"/>
                                         <DataGridTextColumn Binding="{Binding Milestones.Count}" Header="里程碑" Width="80"/>
+                                        <DataGridTextColumn Binding="{Binding TaskLinks.Count}" Header="关联任务" Width="80"/>
                                         <DataGridTemplateColumn Header="操作" Width="130">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>

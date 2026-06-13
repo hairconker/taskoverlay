@@ -68,6 +68,24 @@ public sealed class GoalApplicationService(IGoalRepository repository)
         return saved;
     }
 
+    public async Task<bool> UnlinkTaskAsync(long goalId, long linkId, CancellationToken cancellationToken = default)
+    {
+        var goal = await repository.GetGoalAsync(goalId, cancellationToken);
+        if (goal is null)
+        {
+            return false;
+        }
+
+        var removed = goal.TaskLinks.RemoveAll(link => link.Id == linkId) > 0;
+        if (!removed)
+        {
+            return false;
+        }
+
+        await SaveGoalAsync(goal, cancellationToken);
+        return true;
+    }
+
     public async Task<bool> DeleteGoalAsync(long goalId, CancellationToken cancellationToken = default)
     {
         var deleted = await repository.DeleteGoalAsync(goalId, cancellationToken);

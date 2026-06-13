@@ -217,6 +217,14 @@ try {
     $goals = @(Invoke-CliJson @("goal", "list", "--status", "active"))
     Assert-True (@($goals | Where-Object id -eq $goal.id).Count -eq 1) "goal list should include active goal"
 
+    $manualLinkedGoal = Invoke-CliJson @("goal", "link", $goal.id, "--task-id", $stdinTask.id, "--note", "manual cli link")
+    $manualLink = @($manualLinkedGoal.taskLinks | Where-Object { $_.taskId -eq $stdinTask.id -and $_.note -eq "manual cli link" })[0]
+    Assert-True ($manualLink.id -gt 0) "goal link should attach an existing task"
+    $unlinkResult = Invoke-CliJson @("goal", "unlink", $goal.id, "--link-id", $manualLink.id)
+    Assert-True ($unlinkResult.removed -eq $true) "goal unlink should remove a task link"
+    $goalAfterManualUnlink = Invoke-CliJson @("goal", "show", $goal.id)
+    Assert-True (@($goalAfterManualUnlink.taskLinks | Where-Object id -eq $manualLink.id).Count -eq 0) "goal unlink should not leave the link in goal details"
+
     $goalProposal = Invoke-CliJson @(
         "proposal", "add", "goal-linked proposal",
         "--goal-id", $goal.id,
