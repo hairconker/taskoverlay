@@ -73,7 +73,6 @@ public sealed class KeyboardChordHotkeyService : IHotkeyService
                 {
                     _firedForCurrentChord = true;
                     HotkeyPressed?.Invoke(this, EventArgs.Empty);
-                    return new IntPtr(1);
                 }
             }
             else if (message is Win32Native.WmKeyUp or Win32Native.WmSysKeyUp)

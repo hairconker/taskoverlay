@@ -189,11 +189,7 @@ public partial class OverlayWindow : Window, IOverlayWindowController, INotifyPr
 
     private static IHotkeyService CreateHotkeyService(IntPtr hwnd, string gesture)
     {
-        return gesture.Equals("~+1", StringComparison.OrdinalIgnoreCase) ||
-               gesture.Equals("`+1", StringComparison.OrdinalIgnoreCase) ||
-               KeyboardChordHotkeyService.UsesOem3Key(gesture)
-            ? new KeyboardChordHotkeyService()
-            : new Win32HotkeyService(hwnd);
+        return new KeyboardChordHotkeyService();
     }
 
     private void OnClosing(object? sender, CancelEventArgs e)
