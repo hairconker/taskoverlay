@@ -281,7 +281,8 @@
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="370"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="390" MinWidth="320"/>
                         </Grid.ColumnDefinitions>
                         <Grid Margin="0,0,12,0">
                             <DataGrid ItemsSource="{Binding Items}"
@@ -296,14 +297,22 @@
                                     <DataGridTextColumn Binding="{Binding DueAt, StringFormat={}{0:MM-dd HH:mm}}" Header="截止" Width="106"/>
                                     <DataGridTextColumn Binding="{Binding ScheduleSummary}" Header="重复" Width="82"/>
                                     <DataGridTextColumn Binding="{Binding TagSummary}" Header="标签" Width="110"/>
-                                    <DataGridTemplateColumn Header="操作" Width="230">
+                                    <DataGridTemplateColumn Header="操作" Width="142">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Button Content="编辑" Click="EditTask_OnClick"/>
-                                                    <Button Content="完成/恢复" Click="ToggleTask_OnClick"/>
-                                                    <Button Content="删除" Style="{StaticResource DangerButtonStyle}" Click="DeleteTask_OnClick"/>
-                                                </StackPanel>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition/>
+                                                        <ColumnDefinition/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition/>
+                                                        <RowDefinition/>
+                                                    </Grid.RowDefinitions>
+                                                    <Button Content="编辑" Click="EditTask_OnClick" Padding="8,3" MinHeight="28"/>
+                                                    <Button Grid.Column="1" Content="删除" Style="{StaticResource DangerButtonStyle}" Click="DeleteTask_OnClick" Padding="8,3" MinHeight="28"/>
+                                                    <Button Grid.Row="1" Grid.ColumnSpan="2" Content="完成/恢复" Click="ToggleTask_OnClick" Padding="8,3" MinHeight="28"/>
+                                                </Grid>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
@@ -329,7 +338,15 @@
                             </TextBlock>
                         </Grid>
 
-                        <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+                        <GridSplitter Grid.Column="1"
+                                      Width="8"
+                                      HorizontalAlignment="Stretch"
+                                      VerticalAlignment="Stretch"
+                                      Background="Transparent"
+                                      ResizeBehavior="PreviousAndNext"
+                                      ShowsPreview="True"/>
+
+                        <Border Grid.Column="2" Style="{StaticResource CardStyle}">
                             <DockPanel LastChildFill="True">
                                 <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
                                     <TextBlock Text="{Binding EditorHeading}" Style="{StaticResource SectionTitleStyle}"/>
