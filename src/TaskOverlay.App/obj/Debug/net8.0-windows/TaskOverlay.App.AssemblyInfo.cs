@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TaskOverlay.App")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+127e2fa2f0a582677471ecedae95ace4cfa95939")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ab917b665412c79e954dc640e161f9604a9520db")]
 [assembly: System.Reflection.AssemblyProductAttribute("TaskOverlay.App")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TaskOverlay.App")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

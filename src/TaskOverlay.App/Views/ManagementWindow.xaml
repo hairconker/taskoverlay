@@ -770,18 +770,26 @@
                                             IsSnapToTickEnabled="True"
                                             ValueChanged="OpacitySlider_OnValueChanged"
                                             Margin="0,4,0,4"/>
-                                    <TextBlock Text="拖动时立即预览；点击“保存并应用设置”后会记住这个值。"
+                                    <TextBlock Text="拖动后会立即预览并自动记住。"
                                                Style="{StaticResource HintStyle}"
                                                Margin="0,0,0,10"/>
-                                    <CheckBox x:Name="TopmostBox" Content="默认置顶" Margin="0,4"/>
+                                    <CheckBox x:Name="TopmostBox"
+                                              Content="默认置顶"
+                                              Checked="VisualSetting_OnChanged"
+                                              Unchecked="VisualSetting_OnChanged"
+                                              Margin="0,4"/>
                                     <CheckBox x:Name="StartupBox" Content="开机自启" Margin="0,4"/>
+                                    <TextBlock x:Name="VisualSettingsStatusText"
+                                               Text="透明度和置顶会自动保存。"
+                                               Style="{StaticResource HintStyle}"
+                                               Margin="0,8,0,0"/>
                                 </StackPanel>
                             </Border>
 
                             <Border Style="{StaticResource CardStyle}">
                                 <StackPanel>
                                     <TextBlock Text="应用操作" Style="{StaticResource SectionTitleStyle}"/>
-                                    <TextBlock Text="保存后会立即应用透明度、置顶和有效快捷键；切换存储后端时会重新加载列表。" Style="{StaticResource HintStyle}" Margin="0,4,0,10"/>
+                                    <TextBlock Text="快捷键、开机自启、本地 API 和存储设置修改后，点击保存并应用；透明度和置顶会自动保存。" Style="{StaticResource HintStyle}" Margin="0,4,0,10"/>
                                     <WrapPanel>
                                         <Button Content="保存并应用设置" Style="{StaticResource PrimaryButtonStyle}" Click="SaveSettings_OnClick"/>
                                         <Button Content="退出 TaskOverlay" Style="{StaticResource DangerButtonStyle}" Click="ExitApplication_OnClick"/>

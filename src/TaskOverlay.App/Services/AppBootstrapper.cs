@@ -61,7 +61,11 @@ public sealed class AppBootstrapper : IDisposable
                 _proposals,
                 _goals,
                 ApplySettingsAsync,
-                opacity => _overlayWindow?.SetOpacity(opacity),
+                (opacity, isTopmost) =>
+                {
+                    _overlayWindow?.SetOpacity(opacity);
+                    _overlayWindow?.SetTopmost(isTopmost);
+                },
                 ExitApplication);
             _managementWindow.Closed += (_, _) => _managementWindow = null;
         }

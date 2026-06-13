@@ -1,6 +1,7 @@
 using System.IO;
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Threading;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 using TaskOverlay.App.Services;
@@ -19,8 +20,10 @@ public partial class ManagementWindow : Window
     private readonly ExternalTaskProposalStore _proposals;
     private readonly GoalApplicationService _goals;
     private readonly Func<Task<string?>> _applySettings;
-    private readonly Action<double> _previewOverlayOpacity;
+    private readonly Action<double, bool> _previewOverlayVisualSettings;
     private readonly Action _exitApplication;
+    private readonly DispatcherTimer _visualSettingsSaveTimer = new() { Interval = TimeSpan.FromMilliseconds(500) };
+    private bool _isLoadingSettings;
 
     public ManagementWindow(
         TaskApplicationService tasks,
@@ -29,7 +32,7 @@ public partial class ManagementWindow : Window
         ExternalTaskProposalStore proposals,
         GoalApplicationService goals,
         Func<Task<string?>> applySettings,
-        Action<double> previewOverlayOpacity,
+        Action<double, bool> previewOverlayVisualSettings,
         Action exitApplication)
     {
         InitializeComponent();
@@ -39,10 +42,15 @@ public partial class ManagementWindow : Window
         _proposals = proposals;
         _goals = goals;
         _applySettings = applySettings;
-        _previewOverlayOpacity = previewOverlayOpacity;
+        _previewOverlayVisualSettings = previewOverlayVisualSettings;
         _exitApplication = exitApplication;
         _viewModel = new TaskListViewModel(tasks);
         DataContext = _viewModel;
+        _visualSettingsSaveTimer.Tick += (_, _) =>
+        {
+            _visualSettingsSaveTimer.Stop();
+            SaveVisualSettings();
+        };
         LoadSettings();
         ClearGoalEditor();
         Loaded += async (_, _) =>
@@ -55,6 +63,7 @@ public partial class ManagementWindow : Window
         _goals.GoalsChanged += Goals_OnGoalsChanged;
         Closed += (_, _) =>
         {
+            _visualSettingsSaveTimer.Stop();
             _proposals.ProposalsChanged -= Proposals_OnProposalsChanged;
             _goals.GoalsChanged -= Goals_OnGoalsChanged;
             _viewModel.Dispose();
@@ -809,26 +818,38 @@ public partial class ManagementWindow : Window
 
     private void LoadSettings()
     {
-        var settings = _settingsStore.Current;
-        StorageBackendBox.SelectedValuePath = "Tag";
-        StorageBackendBox.SelectedValue = settings.StorageBackend;
-        HostBox.Text = settings.MySqlHost;
-        PortBox.Text = settings.MySqlPort.ToString();
-        DatabaseBox.Text = settings.MySqlDatabase;
-        UserBox.Text = settings.MySqlUser;
-        PasswordBox.Password = settings.MySqlPassword;
-        HotkeyBox.Text = settings.Hotkey;
-        OpacitySlider.Value = settings.OverlayOpacity;
-        UpdateOpacityPreviewText(settings.OverlayOpacity);
-        TopmostBox.IsChecked = settings.IsTopmost;
-        StartupBox.IsChecked = settings.StartWithWindows;
-        ApiEnabledBox.IsChecked = settings.ApiEnabled;
-        ApiPortBox.Text = settings.ApiPort.ToString();
-        ApiTokenBox.Text = settings.ApiToken;
-        SettingsPathText.Text = _settingsStore.SettingsFilePath;
-        DataPathText.Text = _repository is ITaskDataTransferRepository dataRepository
-            ? dataRepository.DataFilePath
-            : "当前使用 MySQL。切换到本地 JSON 后可使用文件导入与导出。";
+        _isLoadingSettings = true;
+        try
+        {
+            var settings = _settingsStore.Current;
+            StorageBackendBox.SelectedValuePath = "Tag";
+            StorageBackendBox.SelectedValue = settings.StorageBackend;
+            HostBox.Text = settings.MySqlHost;
+            PortBox.Text = settings.MySqlPort.ToString();
+            DatabaseBox.Text = settings.MySqlDatabase;
+            UserBox.Text = settings.MySqlUser;
+            PasswordBox.Password = settings.MySqlPassword;
+            HotkeyBox.Text = settings.Hotkey;
+            OpacitySlider.Value = settings.OverlayOpacity;
+            UpdateOpacityPreviewText(settings.OverlayOpacity);
+            TopmostBox.IsChecked = settings.IsTopmost;
+            StartupBox.IsChecked = settings.StartWithWindows;
+            ApiEnabledBox.IsChecked = settings.ApiEnabled;
+            ApiPortBox.Text = settings.ApiPort.ToString();
+            ApiTokenBox.Text = settings.ApiToken;
+            SettingsPathText.Text = _settingsStore.SettingsFilePath;
+            DataPathText.Text = _repository is ITaskDataTransferRepository dataRepository
+                ? dataRepository.DataFilePath
+                : "当前使用 MySQL。切换到本地 JSON 后可使用文件导入与导出。";
+            if (VisualSettingsStatusText is not null)
+            {
+                VisualSettingsStatusText.Text = "透明度和置顶会自动保存。";
+            }
+        }
+        finally
+        {
+            _isLoadingSettings = false;
+        }
     }
 
     private void CopyApiToken_OnClick(object sender, RoutedEventArgs e)
@@ -840,12 +861,51 @@ public partial class ManagementWindow : Window
     private void OpacitySlider_OnValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         UpdateOpacityPreviewText(e.NewValue);
-        if (!IsLoaded)
+        if (!IsLoaded || _isLoadingSettings)
         {
             return;
         }
 
-        _previewOverlayOpacity(e.NewValue);
+        PreviewVisualSettings();
+        ScheduleVisualSettingsSave();
+    }
+
+    private void VisualSetting_OnChanged(object sender, RoutedEventArgs e)
+    {
+        if (!IsLoaded || _isLoadingSettings)
+        {
+            return;
+        }
+
+        PreviewVisualSettings();
+        ScheduleVisualSettingsSave();
+    }
+
+    private void PreviewVisualSettings()
+    {
+        _previewOverlayVisualSettings(OpacitySlider.Value, TopmostBox.IsChecked == true);
+    }
+
+    private void ScheduleVisualSettingsSave()
+    {
+        _visualSettingsSaveTimer.Stop();
+        _visualSettingsSaveTimer.Start();
+        if (VisualSettingsStatusText is not null)
+        {
+            VisualSettingsStatusText.Text = "正在自动保存显示设置...";
+        }
+    }
+
+    private void SaveVisualSettings()
+    {
+        var settings = _settingsStore.Current;
+        settings.OverlayOpacity = OpacitySlider.Value;
+        settings.IsTopmost = TopmostBox.IsChecked == true;
+        _settingsStore.Save(settings);
+        if (VisualSettingsStatusText is not null)
+        {
+            VisualSettingsStatusText.Text = $"显示设置已自动保存 {DateTime.Now:HH:mm:ss}";
+        }
     }
 
     private void UpdateOpacityPreviewText(double value)
