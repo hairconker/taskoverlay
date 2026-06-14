@@ -155,6 +155,30 @@ if (today.All(t => t.Id != undated.Id))
     throw new InvalidOperationException("Undated task was not returned by today's active filter.");
 }
 
+var acceptanceTask = await tasks.SaveTaskAsync(new TaskItem
+{
+    Title = "今日验收冒烟测试",
+    Notes = "需要交付检查结果",
+    Priority = TaskPriority.High,
+    DueAt = DateTime.Today.AddHours(17),
+    Tags = [new Tag { Name = "UAT" }]
+});
+var normalTodayTask = await tasks.SaveTaskAsync(new TaskItem
+{
+    Title = "普通今日整理任务",
+    DueAt = DateTime.Today.AddHours(18)
+});
+var acceptanceTasks = await tasks.GetTasksAsync(TaskFilter.TodayAcceptance);
+if (acceptanceTasks.All(t => t.Id != acceptanceTask.Id))
+{
+    throw new InvalidOperationException("Today acceptance filter did not include a high-priority acceptance task.");
+}
+
+if (acceptanceTasks.Any(t => t.Id == normalTodayTask.Id))
+{
+    throw new InvalidOperationException("Today acceptance filter included a normal today task without acceptance signal.");
+}
+
 var first = today.Single(t => t.Title == "添加任务冒烟测试");
 await tasks.SetCompletedAsync(first.Id, true);
 var completed = await tasks.GetTasksAsync(TaskFilter.Completed);

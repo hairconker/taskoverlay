@@ -264,6 +264,7 @@
                                 </Grid.ColumnDefinitions>
                                 <ComboBox SelectedValue="{Binding Filter}" SelectedValuePath="Tag" Margin="0">
                                     <ComboBoxItem Content="今天待处理" Tag="{x:Static models:TaskFilter.Today}"/>
+                                    <ComboBoxItem Content="今日验收" Tag="{x:Static models:TaskFilter.TodayAcceptance}"/>
                                     <ComboBoxItem Content="明天" Tag="{x:Static models:TaskFilter.Tomorrow}"/>
                                     <ComboBoxItem Content="未来 7 天" Tag="{x:Static models:TaskFilter.ThisWeek}"/>
                                     <ComboBoxItem Content="已过期" Tag="{x:Static models:TaskFilter.Overdue}"/>

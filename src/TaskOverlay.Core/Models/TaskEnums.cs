@@ -11,6 +11,7 @@ public enum TaskPriority
 public enum TaskFilter
 {
     Today,
+    TodayAcceptance,
     Tomorrow,
     ThisWeek,
     Overdue,

@@ -43,6 +43,7 @@ public sealed class JsonTaskRepository(Func<AppSettings> settingsProvider, strin
         query = filter switch
         {
             TaskFilter.Today => query.Where(t => !t.IsCompleted && (IsUndatedSingleTask(t) || TaskOccurrenceRules.OccursOn(t, today))),
+            TaskFilter.TodayAcceptance => query.Where(t => TaskAcceptanceRules.IsTodayAcceptanceCandidate(t, today)),
             TaskFilter.Tomorrow => query.Where(t => !t.IsCompleted && TaskOccurrenceRules.OccursOn(t, today.AddDays(1))),
             TaskFilter.ThisWeek => query.Where(t => !t.IsCompleted && TaskOccurrenceRules.HasActiveOccurrenceBetween(t, today, today.AddDays(7))),
             TaskFilter.Overdue => query.Where(t => !TaskOccurrenceRules.IsRecurring(t) && !t.IsCompleted && t.DueAt is not null && t.DueAt.Value < now),
